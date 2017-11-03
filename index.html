@@ -13,21 +13,206 @@
     </script>
     <style type="text/css">
         #container {
-            width: 100%;
-        }
-
-        #header {
-            margin: 0;
             text-align: center;
         }
+
+        #search-area {
+            display: inline-block;
+            text-align: start;
+            width: 50%;
+        }
+
+        #search-area .chip {
+            cursor: default;
+            display: inline-flex;
+            align-items: center;
+            background: #f0f0f0;
+            padding-left: 8px;
+            border-radius: 3px;
+        }
+
+        #search-area .chip-del {
+            display: inline-block;
+            background: #f0f0f0;
+            color: #a0a0a0;
+            outline: none !important;
+            border-top: none;
+            border-right: none;
+            border-bottom: none;
+            border-left: 1px solid #d8d8d8;
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+            margin-left: 8px;
+        }
+
+        #search-area .chip-del:hover {
+            background: #e0e0e0;
+        }
+
+        #search-input-area {
+            cursor: text;
+        }
+
+        #search-input {
+            display: inline-block;
+            outline: none !important;
+            border: none;
+            overflow: hidden;
+        }
     </style>
+    <script type="text/javascript">
+        //
+        // Keyword Search System
+        //
+
+        /**
+         * All keywords currently entered in the search input box.
+         * @type {Array}
+         */
+        var search_keywords = [];
+
+        /**
+         * Event handler. Called when a key is pressed on the search input box.
+         *
+         * @param el {HTMLInputElement} The search input box
+         * @param event {KeyboardEvent} The input event
+         * @return {Boolean} Whether to accept the keypress
+         */
+        function on_search_input_key_down(el, event) {
+            // If a comma is being pressed
+            if (event.key === ",") {
+                // Move all typed text into a new keyword
+                search_keywords.push(el.value);
+                el.value = "";
+
+                // Render search chips
+                render_chips();
+
+                // Do not accept the comma as part of a keyword
+                return false;
+            }
+
+            // Do not accept a space as the first character of a keyword
+            return !(event.key === " " && el.value === "");
+        }
+
+        /*
+         * Event handler. Called when focus is lost from the search input box.
+         *
+         * @param el {HTMLInputElement} The search input box
+         */
+        function on_search_input_blur(el) {
+            // If search input box is not empty
+            if (el.value !== "") {
+                // Move all typed text into a new keyword
+                search_keywords.push(el.value);
+                el.value = "";
+
+                // Render search chips
+                render_chips();
+            }
+        }
+
+        /**
+         * Render the current keywords as chips in the search area.
+         */
+        function render_chips() {
+            // Find stuff
+            var search_chips = document.getElementById("search-chips");
+            var search_input = document.getElementById("search-input");
+
+            // Delete all existing search chips
+            while (search_chips.firstChild) {
+                search_chips.removeChild(search_chips.firstChild);
+            }
+
+            // Create new chips for search keywords
+            for (var i = 0; i < search_keywords.length; ++i) {
+                // Root element
+                var chip = document.createElement("span");
+                chip.classList.add("chip");
+                chip.innerText = search_keywords[i];
+
+                // Delete button
+                var chip_del = document.createElement("button");
+                chip_del.classList.add("chip-del");
+                chip_del.innerText = "x";
+
+                // Add elements to search chip area
+                search_chips.appendChild(chip);
+                chip.appendChild(chip_del);
+
+                // Add space between chips
+                search_chips.appendChild(document.createTextNode(" "));
+
+                // Listen for delete button clicks
+                const idx = i;
+                chip_del.onclick = function () {
+                    // Remove the associated keyword
+                    search_keywords.splice(idx, 1);
+
+                    // Re-render the chips
+                    render_chips();
+                };
+            }
+
+            // Show placeholder on search input box if no keywords entered
+            if (search_keywords.length > 0) {
+                search_input.placeholder = "";
+            } else {
+                search_input.placeholder = "Keyword search";
+            }
+        }
+
+        /**
+         * Initialize the keyword search system.
+         */
+        function initialize_search() {
+            // Find stuff
+            var search_input = document.getElementById("search-input");
+            var search_input_area = document.getElementById("search-input-area");
+
+            // Redirect all focus attempts from search input area to search input
+            search_input_area.onclick = function () {
+                search_input.focus();
+            };
+
+            // Preliminarily render chips
+            render_chips();
+        }
+
+        //
+        // Miscellaneous
+        //
+
+        function on_window_load() {
+            // Initialize keyword search system
+            initialize_search();
+        }
+
+        // Listen for window load
+        window.onload = on_window_load;
+    </script>
 </head>
 <body>
 <div id="container">
-    <div id="header" class="row">
+    <div id="header">
         <h1>Math Question Bank</h1>
         <h4>CS 4610 Project 2</h4>
         <h4>Tyler Filla</h4>
+    </div>
+    <div id="search-area">
+        <div class="input-group">
+            <div id="search-input-area" class="form-control">
+                <span id="search-chips"></span>
+                <input id="search-input" type="text" placeholder="Keyword search"
+                       onkeydown="return on_search_input_key_down(this, event);"
+                       onblur="on_search_input_blur(this);"/>
+            </div>
+            <div class="input-group-btn">
+                <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+            </div>
+        </div>
     </div>
 </div>
 </body>
