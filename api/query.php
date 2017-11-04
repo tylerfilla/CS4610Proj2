@@ -55,7 +55,7 @@ while ($pid = $pids_raw[$pid]) {
     $pids_ordered[] = $pid;
 }
 
-$success_result = "{\"success\": true, \"problems\": [";
+$success_result = "{\"success\": true, \"result\": {\"problems\": [";
 
 for ($i = 0; $i < count($pids_ordered); ++$i) {
     // Add comma before each element after the first
@@ -92,7 +92,7 @@ for ($i = 0; $i < count($pids_ordered); ++$i) {
     $success_result .= "{\"pid\": $pid, \"content\": \"$content_b64\"}";
 }
 
-$success_result .= "]}";
+$success_result .= "]}}";
 
 // Close database connection
 $sql->close();
