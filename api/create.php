@@ -11,16 +11,13 @@
 // Create a new math problem and make it first.
 //
 // POST parameters:
-// - "content": The text content of the new problem.
+// - "content": The text content of the new problem
 //
 
-$db_host = "localhost";
-$db_username = "root";
-$db_password = "thisisthepassword";
-$db_name = "mathprobdb";
+require_once "lib/config.php";
 
 // Get parameters
-$p_content = filter_input(INPUT_POST, "content", FILTER_SANITIZE_ENCODED);
+$p_content = $_POST["content"];
 
 // Open database connection
 $sql = new mysqli($db_host, $db_username, $db_password, $db_name);
@@ -31,16 +28,14 @@ if ($sql->connect_errno) {
 
 // Step 1: Add the problem to the database
 // Warning: This step leaves the new problem inaccessible from the user interface
-if ($sql_stmt = $sql->prepare("INSERT INTO `problem` (`content`, `follows`) VALUES (?, ?);")) {
+if ($sql_stmt = $sql->prepare("INSERT INTO `problem` (`content`, `follows`) VALUES (?, ?)")) {
     // Set up parameter bindings
     $sql_stmt->bind_param("si", $b_content, $b_follows);
 
     // Insert content and a dummy follows value
     $b_content = $p_content;
     $b_follows = 1;
-    $result = $sql_stmt->execute();
-
-    if (!$result) {
+    if (!$sql_stmt->execute()) {
         die("{\"success\": false, \"error\": \"Unable to perform step 1: $sql->error\"}");
     }
 
@@ -55,15 +50,13 @@ $pid = $sql->insert_id;
 
 // Step 2: Make the first problem follow the new problem
 // Warning: This step leaves ALL problems inaccessible from the user interface
-if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = ? WHERE `follows` = 0;")) {
+if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = ? WHERE `follows` = 0")) {
     // Set up parameter bindings
     $sql_stmt->bind_param("i", $b_pid);
 
     // Execute the query
     $b_pid = $pid;
-    $result = $sql_stmt->execute();
-
-    if (!$result) {
+    if (!$sql_stmt->execute()) {
         die("{\"success\": false, \"error\": \"Unable to perform step 2: $sql->error\"}");
     }
 
@@ -74,15 +67,13 @@ if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = ? WHERE `follows
 }
 
 // Step 3: Make the new problem first
-if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = 0 WHERE `pid` = ?;")) {
+if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = 0 WHERE `pid` = ?")) {
     // Set up parameter bindings
     $sql_stmt->bind_param("i", $b_pid);
 
     // Execute the query
     $b_pid = $pid;
-    $result = $sql_stmt->execute();
-
-    if (!$result) {
+    if (!$sql_stmt->execute()) {
         die("{\"success\": false, \"error\": \"Unable to perform step 3: $sql->error\"}");
     }
 
