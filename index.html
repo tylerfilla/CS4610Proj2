@@ -203,40 +203,104 @@
             for (var i = 0; i < problem_list.length; ++i) {
                 var problem = problem_list[i];
 
+                const problem_pid = problem["pid"];
+                const problem_content = problem["content"];
+
                 // Row root element
                 var row = document.createElement("tr");
 
                 // Row order column
                 var row_order = document.createElement("td");
+                row_order.style.whiteSpace = "nowrap";
                 row_order.appendChild(document.createTextNode(i + 1));
                 row.appendChild(row_order);
 
                 // Row ID column
                 var row_id = document.createElement("td");
-                row_id.appendChild(document.createTextNode(problem["pid"]));
+                row_id.style.whiteSpace = "nowrap";
+                row_id.appendChild(document.createTextNode(problem_pid));
                 row.appendChild(row_id);
 
                 // Row problem column
                 // Decode the Base64-encoded problem content and add it directly as HTML
                 // We are trusting the server not to send anything malicious at this point
                 var row_problem = document.createElement("td");
-                row_problem.innerHTML = atob(problem["content"]);
+                row_problem.innerHTML = atob(problem_content);
                 row.appendChild(row_problem);
 
                 // Row action column
                 var row_action = document.createElement("td");
+                row_action.style.whiteSpace = "nowrap";
                 row.appendChild(row_action);
+
+                // Move up action button
+                var action_up = document.createElement("button");
+                action_up.classList.add("btn", "btn-default");
+                row_action.appendChild(action_up);
+
+                // Listen for move up action button clicks
+                action_up.addEventListener("click", function () {
+                    alert("clicked MOVE UP action button on problem " + problem_pid);
+                }, false);
+
+                // Icon for move up action button
+                var action_up_icon = document.createElement("span");
+                action_up_icon.classList.add("glyphicon", "glyphicon-chevron-up");
+                action_up.appendChild(action_up_icon);
+
+                // Move down action button
+                var action_down = document.createElement("button");
+                action_down.classList.add("btn", "btn-default");
+                row_action.appendChild(action_down);
+
+                // Listen for move down action button clicks
+                action_down.addEventListener("click", function () {
+                    alert("clicked MOVE DOWN action button on problem " + problem_pid);
+                }, false);
+
+                // Icon for move down action button
+                var action_down_icon = document.createElement("span");
+                action_down_icon.classList.add("glyphicon", "glyphicon-chevron-down");
+                action_down.appendChild(action_down_icon);
+
+                // Edit action button
+                var action_edit = document.createElement("button");
+                action_edit.classList.add("btn", "btn-default");
+                row_action.appendChild(action_edit);
+
+                // Listen for edit action button clicks
+                action_edit.addEventListener("click", function () {
+                    alert("clicked EDIT action button on problem " + problem_pid);
+                }, false);
+
+                // Icon for edit action button
+                var action_edit_icon = document.createElement("span");
+                action_edit_icon.classList.add("glyphicon", "glyphicon-pencil");
+                action_edit.appendChild(action_edit_icon);
+
+                // Trash action button
+                var action_trash = document.createElement("button");
+                action_trash.classList.add("btn", "btn-default");
+                row_action.appendChild(action_trash);
+
+                // Listen for trash action button clicks
+                action_trash.addEventListener("click", function () {
+                    alert("clicked TRASH action button on problem " + problem_pid);
+                }, false);
+
+                // Icon for trash action button
+                var action_trash_icon = document.createElement("span");
+                action_trash_icon.classList.add("glyphicon", "glyphicon-trash");
+                action_trash.appendChild(action_trash_icon);
 
                 // Add row to table
                 result_table_tbody.appendChild(row);
             }
-
-            // Rerun MathJax typesetting
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
         }
 
         /**
          * Communicate with the query API endpoint.
+         *
          * @param {Array} keywords The keywords for the query
          * @param {Function} callback A function to receive the result
          */
@@ -263,6 +327,7 @@
             initialize_search();
 
             // Send a query for "triangle"
+            // TODO: Connect this to search bar
             api_query(["triangle"], function (err, res) {
                 if (err) {
                     console.error("Unable to query for problems");
@@ -271,6 +336,9 @@
 
                 problem_list = res["problems"];
                 render_table();
+
+                // Rerun MathJax typesetting on whole page
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
             });
         }, false);
     </script>
@@ -302,19 +370,7 @@
             <th>Action</th>
         </tr>
         </thead>
-        <tbody>
-        <tr>
-            <td>1</td>
-            <td>1</td>
-            <td>Hello world!</td>
-            <td>
-                <button class="btn btn-default"><span class="glyphicon glyphicon-chevron-up"></span></button>
-                <button class="btn btn-default"><span class="glyphicon glyphicon-chevron-down"></span></button>
-                <button class="btn btn-default"><span class="glyphicon glyphicon-pencil"></span></button>
-                <button class="btn btn-default"><span class="glyphicon glyphicon-trash"></span></button>
-            </td>
-        </tr>
-        </tbody>
+        <tbody></tbody>
     </table>
 </div>
 </body>
