@@ -61,57 +61,11 @@
         }
     </style>
     <script type="text/javascript">
-        //
-        // Keyword Search System
-        //
-
         /**
          * All keywords currently entered in the search input box.
          * @type {Array}
          */
         var search_keywords = [];
-
-        /**
-         * Event handler. Called when a key is pressed on the search input box.
-         *
-         * @param el {HTMLInputElement} The search input box
-         * @param event {KeyboardEvent} The input event
-         * @return {Boolean} Whether to accept the keypress
-         */
-        function on_search_input_key_down(el, event) {
-            // If a comma is being pressed
-            if (event.key === ",") {
-                // Move all typed text into a new keyword
-                search_keywords.push(el.value);
-                el.value = "";
-
-                // Render search chips
-                render_chips();
-
-                // Do not accept the comma as part of a keyword
-                return false;
-            }
-
-            // Do not accept a space as the first character of a keyword
-            return !(event.key === " " && el.value === "");
-        }
-
-        /*
-         * Event handler. Called when focus is lost from the search input box.
-         *
-         * @param el {HTMLInputElement} The search input box
-         */
-        function on_search_input_blur(el) {
-            // If search input box is not empty
-            if (el.value !== "") {
-                // Move all typed text into a new keyword
-                search_keywords.push(el.value);
-                el.value = "";
-
-                // Render search chips
-                render_chips();
-            }
-        }
 
         /**
          * Render the current keywords as chips in the search area.
@@ -147,13 +101,13 @@
 
                 // Listen for delete button clicks
                 const idx = i;
-                chip_del.onclick = function () {
+                chip_del.addEventListener("click", function () {
                     // Remove the associated keyword
                     search_keywords.splice(idx, 1);
 
                     // Re-render the chips
                     render_chips();
-                };
+                }, false);
             }
 
             // Show placeholder on search input box if no keywords entered
@@ -172,26 +126,66 @@
             var search_input = document.getElementById("search-input");
             var search_input_area = document.getElementById("search-input-area");
 
-            // Redirect all focus attempts from search input area to search input
-            search_input_area.onclick = function () {
-                search_input.focus();
-            };
+            // Listen for search input key down
+            search_input.addEventListener("keydown", function (event) {
+                if (event.key === ",") {
+                    // Move all typed text into a new keyword
+                    search_keywords.push(this.value);
+                    this.value = "";
 
-            // Preliminarily render chips
+                    // Render search chips
+                    render_chips();
+
+                    // Do not accept the comma as part of a keyword
+                    event.preventDefault();
+
+                    return;
+                }
+
+                // If input box is empty and backspace was pressed
+                if (event.keyCode === 8 && this.value === "") {
+                    // Remove last keyword
+                    search_keywords.pop();
+
+                    // Render search chips
+                    render_chips();
+
+                    return;
+                }
+
+                // Do not accept a space as the first character of a keyword
+                if (event.key === " " && this.value === "") {
+                    event.preventDefault();
+                }
+            }, true);
+
+            // Listen for search input blur
+            search_input.addEventListener("blur", function () {
+                // If search input box is not empty
+                if (this.value !== "") {
+                    // Move all typed text into a new keyword
+                    search_keywords.push(this.value);
+                    this.value = "";
+
+                    // Render search chips
+                    render_chips();
+                }
+            }, false);
+
+            // Redirect all focus attempts from search input area to search input
+            search_input_area.addEventListener("click", function () {
+                search_input.focus();
+            }, false);
+
+            // Render search chips
             render_chips();
         }
 
-        //
-        // Miscellaneous
-        //
-
-        function on_window_load() {
+        // Listen for window load
+        window.addEventListener("load", function () {
             // Initialize keyword search system
             initialize_search();
-        }
-
-        // Listen for window load
-        window.onload = on_window_load;
+        }, false);
     </script>
 </head>
 <body>
@@ -205,9 +199,7 @@
         <div class="input-group">
             <div id="search-input-area" class="form-control">
                 <span id="search-chips"></span>
-                <input id="search-input" type="text" placeholder="Keyword search"
-                       onkeydown="return on_search_input_key_down(this, event);"
-                       onblur="on_search_input_blur(this);"/>
+                <input id="search-input" type="text" placeholder="Keyword search"/>
             </div>
             <div class="input-group-btn">
                 <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
