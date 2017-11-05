@@ -624,7 +624,15 @@ function renderResultTable(problemList) {
 
             // Listen for move up action button clicks
             actionUp.addEventListener("click", function() {
-                alert("clicked MOVE UP action button on problem " + problemPid);
+                apiMove(problemPid, "up", function(err, res) {
+                    if (err) {
+                        console.error("Unable to move problem up: " + err);
+                        return;
+                    }
+
+                    // Refresh result table
+                    refreshResultTable();
+                });
             }, false);
 
             // Icon for move up action button
@@ -640,7 +648,15 @@ function renderResultTable(problemList) {
 
             // Listen for move down action button clicks
             actionDown.addEventListener("click", function() {
-                alert("clicked MOVE DOWN action button on problem " + problemPid);
+                apiMove(problemPid, "down", function(err, res) {
+                    if (err) {
+                        console.error("Unable to move problem down: " + err);
+                        return;
+                    }
+
+                    // Refresh result table
+                    refreshResultTable();
+                });
             }, false);
 
             // Icon for move down action button
@@ -657,10 +673,7 @@ function renderResultTable(problemList) {
 
         // Listen for edit action button clicks
         actionEdit.addEventListener("click", function() {
-            const pid = problemPid;
-            const content = problemContent;
-            const keywords = problemKeywords;
-            showEditModal(false, pid, content, keywords);
+            showEditModal(false, problemPid, problemContent, problemKeywords);
         }, false);
 
         // Icon for edit action button
@@ -823,7 +836,7 @@ function apiList(pageNum, pageSize, callback) {
  * Communicate with the move API endpoint.
  *
  * @param {String} pid The ID of the target problem
- * @param {String} dir "up" to move up one or "down" to move down one
+ * @param {String} dir "up" or "down"
  * @param {Function} callback A function to receive the result
  */
 function apiMove(pid, dir, callback) {
@@ -916,7 +929,15 @@ function apiUpdate(pid, content, callback) {
 //
 
 /**
- * Begin the empty trash flow.
+ * Start the compose new flow.
+ */
+function startComposeNew() {
+    // Show the edit modal in create mode
+    showEditModal(true, 0, '', []);
+}
+
+/**
+ * Start the empty trash flow.
  */
 function startEmptyTrash() {
     // Get trash count
