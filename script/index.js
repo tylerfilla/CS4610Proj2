@@ -471,7 +471,7 @@ function renderResultTable(problemList) {
  */
 function refreshResultTable() {
     // Get trash count
-    apiTrash("count", 0, function(err, res) {
+    apiTrash("count", 0, function (err, res) {
         if (err) {
             console.error("Could not refresh result table (get trash count): " + err);
             return;
@@ -672,9 +672,9 @@ function apiUpdate(pid, content, callback) {
  */
 function startEmptyTrash() {
     // Get trash count
-    apiTrash("count", 0, function(err, res) {
+    apiTrash("count", 0, function (err, res) {
         if (err) {
-            console.error("Could not refresh result table (get trash count): " + err);
+            console.error("Empty trash failed (get trash count): " + err);
             return;
         }
 
@@ -683,6 +683,21 @@ function startEmptyTrash() {
 
         // Continue flow with empty trash modal dialog
         showEmptyTrashModal(trashCount);
+    });
+}
+
+/**
+ * Undo the last moved-to-trash problem.
+ */
+function doUndoTrash() {
+    apiTrash("undo", 0, function(err, res) {
+        if (err) {
+            console.error("Undo trash failed: " + err);
+            return;
+        }
+
+        // Refresh result table
+        refreshResultTable();
     });
 }
 

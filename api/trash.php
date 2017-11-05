@@ -160,6 +160,8 @@ function action_undo($sql)
         }
         $sql_stmt->close();
     }
+
+    echo "{\"success\": true}";
 }
 
 switch ($p_action) {
