@@ -69,19 +69,11 @@ for ($i = 0; $i < count($pids_ordered); ++$i) {
     $content = null;
 
     if ($sql_stmt = $sql->prepare("SELECT `content` FROM `problem` WHERE `pid` = ?")) {
-        // Set up parameter bindings
-        $sql_stmt->bind_param("i", $b_pid);
-
-        // Execute the query
-        $b_pid = $pid;
+        $sql_stmt->bind_param("i", $pid);
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to get content: $sql->error\"}");
         }
-
-        // Fetch content
         $content = $sql_stmt->get_result()->fetch_assoc()["content"];
-
-        // Close the statement
         $sql_stmt->close();
     } else {
         die("{\"success\": false, \"error\": \"Unable to prepare to get content: $sql->error\"}");

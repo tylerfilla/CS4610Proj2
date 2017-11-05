@@ -34,6 +34,7 @@ if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `content` = ? WHERE `pid` = 
     if (!$sql_stmt->execute()) {
         die("{\"success\": false, \"error\": \"Unable to update problem: $sql->connect_error\"}");
     }
+    $sql_stmt->close();
 }
 
 // Close database connection

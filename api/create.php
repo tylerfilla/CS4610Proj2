@@ -29,7 +29,6 @@ if ($sql->connect_errno) {
 // Step 1: Add the problem to the database
 // Warning: This step leaves the new problem inaccessible from the user interface
 if ($sql_stmt = $sql->prepare("INSERT INTO `problem` (`content`, `follows`) VALUES (?, ?)")) {
-    // Set up parameter bindings
     $sql_stmt->bind_param("si", $b_content, $b_follows);
 
     // Insert content and a dummy follows value
@@ -39,7 +38,6 @@ if ($sql_stmt = $sql->prepare("INSERT INTO `problem` (`content`, `follows`) VALU
         die("{\"success\": false, \"error\": \"Unable to perform step 1: $sql->error\"}");
     }
 
-    // Close the statement
     $sql_stmt->close();
 } else {
     die("{\"success\": false, \"error\": \"Unable to prepare step 1: $sql->error\"}");
@@ -51,16 +49,10 @@ $pid = $sql->insert_id;
 // Step 2: Make the first problem follow the new problem
 // Warning: This step leaves ALL problems inaccessible from the user interface
 if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = ? WHERE `follows` = 0")) {
-    // Set up parameter bindings
-    $sql_stmt->bind_param("i", $b_pid);
-
-    // Execute the query
-    $b_pid = $pid;
+    $sql_stmt->bind_param("i", $pid);
     if (!$sql_stmt->execute()) {
         die("{\"success\": false, \"error\": \"Unable to perform step 2: $sql->error\"}");
     }
-
-    // Close the statement
     $sql_stmt->close();
 } else {
     die("{\"success\": false, \"error\": \"Unable to prepare step 2: $sql->error\"}");
@@ -68,16 +60,10 @@ if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = ? WHERE `follows
 
 // Step 3: Make the new problem first
 if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = 0 WHERE `pid` = ?")) {
-    // Set up parameter bindings
-    $sql_stmt->bind_param("i", $b_pid);
-
-    // Execute the query
-    $b_pid = $pid;
+    $sql_stmt->bind_param("i", $pid);
     if (!$sql_stmt->execute()) {
         die("{\"success\": false, \"error\": \"Unable to perform step 3: $sql->error\"}");
     }
-
-    // Close the statement
     $sql_stmt->close();
 } else {
     die("{\"success\": false, \"error\": \"Unable to prepare step 3: $sql->error\"}");

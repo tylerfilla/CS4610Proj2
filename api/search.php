@@ -53,11 +53,7 @@ $matched_keywords = array();
 // Query for keywords and collect matches
 foreach ($keywords as $keyword) {
     if ($sql_stmt = $sql->prepare("SELECT `pid` FROM `keyword` WHERE `word` = ?")) {
-        // Set up parameter bindings
-        $sql_stmt->bind_param("s", $b_keyword);
-
-        // Execute the query
-        $b_keyword = $keyword;
+        $sql_stmt->bind_param("s", $keyword);
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to query keyword: $sql->error\"}");
         }
@@ -78,6 +74,8 @@ foreach ($keywords as $keyword) {
             }
             $matched_keywords[$pid][] = $keyword;
         }
+
+        $sql_stmt->close();
     } else {
         die("{\"success\": false, \"error\": \"Unable to prepare to query keyword: $sql->error\"}");
     }
@@ -107,19 +105,11 @@ for ($i = 0; $i < count($matched_pids); ++$i) {
     $m_content = null;
 
     if ($sql_stmt = $sql->prepare("SELECT `content` FROM `problem` WHERE `pid` = ?")) {
-        // Set up parameter bindings
-        $sql_stmt->bind_param("i", $b_pid);
-
-        // Execute the query
-        $b_pid = $m_pid;
+        $sql_stmt->bind_param("i", $m_pid);
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to get content: $sql->error\"}");
         }
-
-        // Fetch content
         $m_content = $sql_stmt->get_result()->fetch_assoc()["content"];
-
-        // Close the statement
         $sql_stmt->close();
     } else {
         die("{\"success\": false, \"error\": \"Unable to prepare to get content: $sql->error\"}");

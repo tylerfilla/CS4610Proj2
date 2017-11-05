@@ -84,6 +84,7 @@ function action_move($sql, $pid)
             die("{\"success\": false, \"error\": \"Unable to move to trash: $sql->connect_error\"}");
         }
         $target_follows = $sql_stmt->get_result()->fetch_assoc()["follows"];
+        $sql_stmt->close();
     }
 
     // Exclude target problem from linked list structure
@@ -93,6 +94,7 @@ function action_move($sql, $pid)
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to move to trash: $sql->connect_error\"}");
         }
+        $sql_stmt->close();
     }
 
     // Make target problem follow nothing else in the list
@@ -102,6 +104,7 @@ function action_move($sql, $pid)
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to move to trash: $sql->connect_error\"}");
         }
+        $sql_stmt->close();
     }
 
     // Update trashed timestamp on target problem
@@ -110,6 +113,7 @@ function action_move($sql, $pid)
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to move to trash: $sql->connect_error\"}");
         }
+        $sql_stmt->close();
     }
 
     echo "{\"success\": true}";
@@ -136,6 +140,7 @@ function action_undo($sql)
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->connect_error\"}");
         }
+        $sql_stmt->close();
     }
 
     // Now insert the target problem first
@@ -144,6 +149,7 @@ function action_undo($sql)
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->connect_error\"}");
         }
+        $sql_stmt->close();
     }
 
     // Clear the now-reinstated target problem's trashed timestamp
@@ -152,6 +158,7 @@ function action_undo($sql)
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->connect_error\"}");
         }
+        $sql_stmt->close();
     }
 }
 
