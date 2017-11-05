@@ -24,6 +24,15 @@ function KeywordInput(elInputArea, elChipArea, elInputBox, placeholderText) {
     this._placeholderText = placeholderText;
     this._keywords = [];
 
+    // Bound DOM event handlers
+    this._elInputBoxKeyDownBind = this._onInputBoxKeyDown.bind(this);
+    this._elInputBoxBlurBind = this._onInputBoxBlur.bind(this);
+    this._elInputAreaClickBind = this._onInputAreaClick.bind(this);
+
+    // Custom event handlers
+    this._onKeywordAdd = [];
+    this._onKeywordRemove = [];
+
     // Further initialization
     this._initialize();
 }
@@ -33,74 +42,109 @@ function KeywordInput(elInputArea, elChipArea, elInputBox, placeholderText) {
  * @private
  */
 KeywordInput.prototype._initialize = function() {
-    const thiz = this;
-
     // Listen for input box key down events
-    this._elInputBox.addEventListener("keydown", function(event) {
-        // If user is pressing the comma key or enter key
-        if (event.key === "," || event.keyCode === 13) {
-            // If the input box is not empty
-            if (this.value !== "") {
-                // Get all typed text...
-                var keyword = this.value;
-                this.value = "";
-
-                // And add it as a new keyword
-                thiz.addKeyword(keyword);
-
-                // Re-render search chips
-                thiz.render();
-            }
-
-            event.preventDefault();
-            return;
-        }
-
-        // If user is pressing the backspace key
-        if (event.keyCode === 8) {
-            // If the input box is empty
-            if (this.value === "") {
-                // Remove the last keyword
-                thiz._keywords.pop();
-
-                // Re-render search chips
-                thiz.render();
-
-                return;
-            }
-        }
-
-        // If user is pressing the space key
-        if (event.key === " ") {
-            // If the input box is empty
-            if (this.value === "") {
-                // Block the space
-                event.preventDefault();
-            }
-        }
-    }, true);
+    this._elInputBox.addEventListener("keydown", this._elInputBoxKeyDownBind, true);
 
     // Listen for input box blur events
-    this._elInputBox.addEventListener("blur", function() {
-        // If the input box is not empty
-        if (this.value !== "") {
-            // Get all typed text...
-            var keyword = this.value;
-            this.value = "";
-
-            // And add it as a new keyword
-            thiz.addKeyword(keyword);
-
-            // Re-render search chips
-            thiz.render();
-        }
-    }, false);
+    this._elInputBox.addEventListener("blur", this._elInputBoxBlurBind, false);
 
     // Listen for input area click events
-    this._elInputArea.addEventListener("click", function() {
-        // Focus the input box
-        thiz.focusInputBox();
-    }, false);
+    this._elInputArea.addEventListener("click", this._elInputAreaClickBind, false);
+
+    // Preliminary render
+    this.render();
+};
+
+/**
+ * Dispose of the keyword input control instance.
+ */
+KeywordInput.prototype.dispose = function() {
+    // Remove all keyword listeners
+    this.removeAllListeners();
+
+    // Unlisten for input box key down events
+    this._elInputBox.removeEventListener("keydown", this._elInputBoxKeyDownBind, true);
+
+    // Unlisten for input box blur events
+    this._elInputBox.removeEventListener("blur", this._elInputBoxBlurBind, false);
+
+    // Unlisten for input area click events
+    this._elInputArea.removeEventListener("click", this._elInputAreaClickBind, false);
+};
+
+/**
+ * Event handler. Called when a key goes down on the input box.
+ * @private
+ */
+KeywordInput.prototype._onInputBoxKeyDown = function(event) {
+    // If user is pressing the comma key or enter key
+    if (event.key === "," || event.keyCode === 13) {
+        // If the input box is not empty
+        if (this._elInputBox.value !== "") {
+            // Get all typed text...
+            var keyword = this._elInputBox.value;
+            this._elInputBox.value = "";
+
+            // And add it as a new keyword
+            this.addKeyword(keyword);
+
+            // Re-render search chips
+            this.render();
+        }
+
+        event.preventDefault();
+        return;
+    }
+
+    // If user is pressing the backspace key
+    if (event.keyCode === 8) {
+        // If the input box is empty
+        if (this._elInputBox.value === "") {
+            // Remove the last keyword
+            this._keywords.pop();
+
+            // Re-render search chips
+            this.render();
+
+            return;
+        }
+    }
+
+    // If user is pressing the space key
+    if (event.key === " ") {
+        // If the input box is empty
+        if (this._elInputBox.value === "") {
+            // Block the space
+            event.preventDefault();
+        }
+    }
+};
+
+/**
+ * Event handler. Called when focus is lost from the input box.
+ * @private
+ */
+KeywordInput.prototype._onInputBoxBlur = function(event) {
+    // If the input box is not empty
+    if (this._elInputBox.value !== "") {
+        // Get all typed text...
+        var keyword = this._elInputBox.value;
+        this._elInputBox.value = "";
+
+        // And add it as a new keyword
+        this.addKeyword(keyword);
+
+        // Re-render search chips
+        this.render();
+    }
+};
+
+/**
+ * Event handler. Called when the input area is clicked.
+ * @private
+ */
+KeywordInput.prototype._onInputAreaClick = function(event) {
+    this.focusInputBox();
 };
 
 /**
@@ -110,6 +154,14 @@ KeywordInput.prototype._initialize = function() {
  */
 KeywordInput.prototype.addKeyword = function(keyword) {
     this._keywords.push(keyword);
+
+    // Call listeners
+    for (var i = 0; i < this._onKeywordAdd.length; ++i) {
+        this._onKeywordAdd[i](keyword);
+    }
+
+    // Re-render the control
+    this.render();
 };
 
 /**
@@ -127,7 +179,51 @@ KeywordInput.prototype.removeKeyword = function(keyword) {
  * @param {Number} keywordIdx The keyword index
  */
 KeywordInput.prototype.removeKeywordIdx = function(keywordIdx) {
+    var keyword = this._keywords[keywordIdx];
     this._keywords.splice(keywordIdx, 1);
+
+    // Call listeners
+    for (var i = 0; i < this._onKeywordRemove.length; ++i) {
+        this._onKeywordRemove[i](keyword);
+    }
+
+    // Re-render the control
+    this.render();
+};
+
+/**
+ * Get all keywords.
+ *
+ * @returns {Array} The keyword array
+ */
+KeywordInput.prototype.getKeywords = function() {
+    return this._keywords;
+};
+
+/**
+ * Add a listener for keyword add events.
+ *
+ * @param callback The listener callback function
+ */
+KeywordInput.prototype.addOnKeywordAddListener = function(callback) {
+    this._onKeywordAdd.push(callback);
+};
+
+/**
+ * Add a listener for keyword remove events.
+ *
+ * @param callback The listener callback function
+ */
+KeywordInput.prototype.addOnKeywordRemoveListener = function(callback) {
+    this._onKeywordRemove.push(callback);
+};
+
+/**
+ * Remove all registered event listeners.
+ */
+KeywordInput.prototype.removeAllListeners = function() {
+    this._onKeywordAdd = [];
+    this._onKeywordRemove = [];
 };
 
 /**
@@ -167,9 +263,6 @@ KeywordInput.prototype.render = function() {
         chipDel.addEventListener("click", function() {
             // Remove the associated keyword
             thiz.removeKeywordIdx(keywordIdx);
-
-            // Re-render the chips
-            thiz.render();
         }, false);
 
         // Append to chip area, followed by a space
@@ -199,7 +292,7 @@ var editModalOutstandingProblem = -1;
  * The keyword input control instance for the edit modal.
  * @type {KeywordInput}
  */
-var editModalKeywordInput;
+var editModalKeywordInput = null;
 
 /**
  * The ID of the problem for which the trash modal is currently shown, or -1 if it isn't shown.
@@ -218,6 +311,9 @@ function onEditModalConfirm() {
 
     // Get edited content
     var content = $("#edit-input-area").val();
+
+    // Get keywords
+    var keywords = editModalKeywordInput.getKeywords();
 
     // Complete the confirmation
     function complete() {
@@ -241,7 +337,23 @@ function onEditModalConfirm() {
                 return;
             }
 
-            complete();
+            // Get ID of new problem
+            var pid = res["pid"];
+
+            // Send a keyword add request to the server
+            // All provided keywords will be associated with the new problem
+            if (keywords.length > 0) {
+                apiKeyword("add", keywords.join(","), pid, function(err, res) {
+                    if (err) {
+                        console.error("Add keywords failed: " + err);
+                        return;
+                    }
+
+                    complete();
+                });
+            } else {
+                complete();
+            }
         });
     } else {
         // Editing an existing problem
@@ -353,6 +465,9 @@ function showEditModal(createMode, problem, content, keywords) {
     var inputBox = modalEdit.find(".keyword-input-box").get(0);
 
     // Set up keyword input
+    if (editModalKeywordInput) {
+        editModalKeywordInput.dispose();
+    }
     editModalKeywordInput = new KeywordInput(inputArea, chipArea, inputBox, "Keywords");
 
     // Add given keywords
@@ -360,8 +475,32 @@ function showEditModal(createMode, problem, content, keywords) {
         editModalKeywordInput.addKeyword(keywords[i]);
     }
 
-    // Preliminary keyword render
-    editModalKeywordInput.render();
+    // Listen for keyword events and provide live updates to server
+    // Do this only when not in create mode, however
+    if (!createMode) {
+        editModalKeywordInput.addOnKeywordAddListener(function(keyword) {
+            // Send keyword add request to server
+            apiKeyword("add", keyword, problem, function(err, res) {
+                if (err) {
+                    console.error("Unable to add keyword: " + err);
+                }
+
+                // Refresh result table
+                refreshResultTable();
+            });
+        });
+        editModalKeywordInput.addOnKeywordRemoveListener(function(keyword) {
+            // Send keyword remove request to server
+            apiKeyword("remove", keyword, problem, function(err, res) {
+                if (err) {
+                    console.error("Unable to remove keyword: " + err);
+                }
+
+                // Refresh result table
+                refreshResultTable();
+            });
+        });
+    }
 
     // Configure title
     if (createMode) {
@@ -518,7 +657,10 @@ function renderResultTable(problemList) {
 
         // Listen for edit action button clicks
         actionEdit.addEventListener("click", function() {
-            showEditModal(false, problemPid, problemContent, problemKeywords);
+            const pid = problemPid;
+            const content = problemContent;
+            const keywords = problemKeywords;
+            showEditModal(false, pid, content, keywords);
         }, false);
 
         // Icon for edit action button

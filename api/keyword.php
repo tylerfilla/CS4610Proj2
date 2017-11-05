@@ -33,18 +33,24 @@ if ($sql->connect_errno) {
 /**
  * Perform the add action.
  *
- * @param \mysqli $sql The SQL connection
+ * @param \mysqli $sql     The SQL connection
  * @param string  $keyword The keyword text
- * @param integer $pid The ID of the target problem
+ * @param integer $pid     The ID of the target problem
  */
 function action_add($sql, $keyword, $pid)
 {
-    // Insert the keyword text
-    if ($sql_stmt = $sql->prepare("INSERT INTO `keyword` (`pid`, `word`) VALUES (?, ?)")) {
-        $sql_stmt->bind_param("is", $pid, $keyword);
-        if (!$sql_stmt->execute()) {
-            die("{\"success\": false, \"error\": \"Unable to add keyword: $sql->error\"}");
+    $keywords = explode(",", $keyword);
+
+    if ($sql_stmt = $sql->prepare("INSERT IGNORE INTO `keyword` (`pid`, `word`) VALUES (?, ?)")) {
+        $sql_stmt->bind_param("is", $pid, $b_keyword);
+
+        for ($i = 0; $i < count($keywords); ++$i) {
+            $b_keyword = $keywords[$i];
+            if (!$sql_stmt->execute()) {
+                die("{\"success\": false, \"error\": \"Unable to add keyword ($b_keyword): $sql->error\"}");
+            }
         }
+
         $sql_stmt->close();
     }
 
@@ -54,9 +60,9 @@ function action_add($sql, $keyword, $pid)
 /**
  * Perform the remove action.
  *
- * @param \mysqli $sql The SQL connection
+ * @param \mysqli $sql     The SQL connection
  * @param string  $keyword The keyword text
- * @param integer $pid The ID of the target problem
+ * @param integer $pid     The ID of the target problem
  */
 function action_remove($sql, $keyword, $pid)
 {
@@ -75,7 +81,7 @@ function action_remove($sql, $keyword, $pid)
 /**
  * Perform the suggest action.
  *
- * @param \mysqli $sql The SQL connection
+ * @param \mysqli $sql     The SQL connection
  * @param string  $keyword The keyword text
  */
 function action_suggest($sql, $keyword)

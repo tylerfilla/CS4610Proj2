@@ -72,4 +72,4 @@ if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = 0 WHERE `pid` = 
 // Close database connection
 $sql->close();
 
-echo "{\"success\": true, \"pid\": $pid}";
+echo "{\"success\": true, \"result\": {\"pid\": $pid}}";
