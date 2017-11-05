@@ -16,15 +16,17 @@
 
 .keyword-input-area {
     cursor: text;
+    overflow-y: auto;
 }
 
 .keyword-input-chip-area .chip {
     cursor: default;
-    display: inline-flex;
+    display: inline-block;
     align-items: center;
     background: #f0f0f0;
     padding-left: 8px;
     border-radius: 3px;
+    height: 100%;
 }
 
 .keyword-input-chip-area .chip-del {
@@ -39,6 +41,7 @@
     border-top-right-radius: 3px;
     border-bottom-right-radius: 3px;
     margin-left: 8px;
+    height: 100%;
 }
 
 .keyword-input-chip-area .chip-del:hover {
@@ -46,10 +49,16 @@
 }
 
 .keyword-input-box {
+    background: transparent;
     display: inline-block;
     outline: none !important;
     border: none;
-    overflow: hidden;
+    height: 100%;
+}
+
+#edit-input-area {
+    width: 100%;
+    resize: vertical;
 }
 
 #result-table {

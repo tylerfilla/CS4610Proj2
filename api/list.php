@@ -62,12 +62,14 @@ $success_result = "{\"success\": true, \"result\": {\"problems\": [";
 // List all queried problems
 for ($i = 0; $i < count($pids_ordered); ++$i) {
     if ($i > 0) {
-        $success_result .= ",";
+        $success_result .= ", ";
     }
 
     $pid = $pids_ordered[$i];
-    $content = null;
+    $content = "";
+    $keywords = array();
 
+    // Retrieve problem content
     if ($sql_stmt = $sql->prepare("SELECT `content` FROM `problem` WHERE `pid` = ?")) {
         $sql_stmt->bind_param("i", $pid);
         if (!$sql_stmt->execute()) {
@@ -79,11 +81,39 @@ for ($i = 0; $i < count($pids_ordered); ++$i) {
         die("{\"success\": false, \"error\": \"Unable to prepare to get content: $sql->error\"}");
     }
 
+    // Retrieve problem keywords
+    if ($sql_stmt = $sql->prepare("SELECT `word` FROM `keyword` WHERE `pid` = ?")) {
+        $sql_stmt->bind_param("i", $pid);
+        if (!$sql_stmt->execute()) {
+            die("{\"success\": false, \"error\": \"Unable to get keywords: $sql->error\"}");
+        }
+
+        $result = $sql_stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $keywords[] = $row["word"];
+        }
+
+        $sql_stmt->close();
+    } else {
+        die("{\"success\": false, \"error\": \"Unable to prepare to get keywords: $sql->error\"}");
+    }
+
     // Base64-encode the content, because there are just too many things to try to escape
     // We just assume that all the character-level stuff (i.e. encoding) will work out
     $content_b64 = base64_encode($content);
 
-    $success_result .= "{\"pid\": $pid, \"content\": \"$content_b64\"}";
+    $success_result .= "{\"pid\": $pid, \"content\": \"$content_b64\", ";
+
+    // List all keywords
+    $success_result .= "\"keywords\": [";
+    for ($j = 0; $j < count($keywords); ++$j) {
+        if ($j > 0) {
+            $success_result .= ", ";
+        }
+
+        $success_result .= "\"" . addslashes($keywords[$j]) . "\"";
+    }
+    $success_result .= "]}";
 }
 
 $success_result .= "]}}";

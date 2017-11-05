@@ -26,16 +26,24 @@
                 <h4 class="modal-title"></h4>
             </div>
             <div class="modal-body">
-                <label for="edit-input-area">Problem source:</label><br/>
-                <textarea id="edit-input-area" cols="80" rows="5" onkeyup="onEditInputAreaUpdate()"></textarea>
-                <label for="edit-keyword-input-area">Problem keywords:</label>
-                <div id="edit-keyword-input-area" class="form-control keyword-input-area">
-                    <span id="edit-keyword-input-chip-area" class="keyword-input-chip-area"></span>
-                    <input id="edit-keyword-input-box" class="keyword-input-box" type="text"
-                           placeholder="Keywords"/>
+                <div>
+                    <label for="edit-input-area">Problem source:</label><br/>
+                    <textarea id="edit-input-area" cols="80" rows="5" onkeyup="onEditInputAreaUpdate()"></textarea>
                 </div>
-                <label for="edit-preview-area">Problem preview:</label>
-                <div id="edit-preview-area"></div>
+                <p>&nbsp;</p>
+                <div>
+                    <label for="edit-preview-area">Problem preview:</label><br/>
+                    <div id="edit-preview-area"></div>
+                </div>
+                <p>&nbsp;</p>
+                <div>
+                    <label for="edit-keyword-input-area">Problem keywords:</label><br/>
+                    <div id="edit-keyword-input-area" class="form-control keyword-input-area">
+                        <span id="edit-keyword-input-chip-area" class="keyword-input-chip-area"></span>
+                        <input id="edit-keyword-input-box" class="keyword-input-box" type="text"
+                               placeholder="Keywords"/>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -96,7 +104,7 @@
         </div>
     </div>
     <div>
-        <button class="btn btn-default" onclick="showEditModal(true, 0, '')">
+        <button class="btn btn-default" onclick="showEditModal(true, 0, '', [])">
             <span class="glyphicon glyphicon-pencil"></span>
             Compose New
         </button>

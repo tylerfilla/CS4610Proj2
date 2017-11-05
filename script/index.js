@@ -334,8 +334,9 @@ function onEmptyTrashModalConfirm() {
  * @param {Boolean} createMode True to edit in create mode, otherwise false
  * @param {Number} problem The ID of the target problem
  * @param {String} content The initial problem content source to display
+ * @param {Array} keywords The initial problem keywords to display
  */
-function showEditModal(createMode, problem, content) {
+function showEditModal(createMode, problem, content, keywords) {
     // Set outstanding problem
     if (createMode) {
         // -2 represents a new problem
@@ -354,9 +355,17 @@ function showEditModal(createMode, problem, content) {
     // Set up keyword input
     editModalKeywordInput = new KeywordInput(inputArea, chipArea, inputBox, "Keywords");
 
+    // Add given keywords
+    for (var i = 0; i < keywords.length; ++i) {
+        editModalKeywordInput.addKeyword(keywords[i]);
+    }
+
+    // Preliminary keyword render
+    editModalKeywordInput.render();
+
+    // Configure title
     if (createMode) {
         modalEdit.find(".modal-title").text("Compose New Problem");
-        modalEdit.find(".keyword-input-box").val("");
     } else {
         modalEdit.find(".modal-title").text("Editing Problem " + problem);
     }
@@ -433,6 +442,7 @@ function renderResultTable(problemList) {
         // We are trusting the server not to send anything malicious at this point
         const problemPid = problem["pid"];
         const problemContent = atob(problem["content"]);
+        const problemKeywords = problem["keywords"];
 
         // Row root element
         var row = document.createElement("tr");
@@ -508,7 +518,7 @@ function renderResultTable(problemList) {
 
         // Listen for edit action button clicks
         actionEdit.addEventListener("click", function() {
-            showEditModal(false, problemPid, problemContent);
+            showEditModal(false, problemPid, problemContent, problemKeywords);
         }, false);
 
         // Icon for edit action button
@@ -618,6 +628,30 @@ function apiCreate(content, callback) {
         }
     };
     request.send("content=" + encodeURI(content));
+}
+
+/**
+ * Communicate with the keyword API endpoint.
+ *
+ * @param action "add", "remove", or "suggest"
+ * @param keyword The keyword text
+ * @param pid The ID of the target problem
+ * @param callback A function to receive the result
+ */
+function apiKeyword(action, keyword, pid, callback) {
+    var request = new XMLHttpRequest();
+    request.open("GET", "/api/keyword.php?action=" + action + "&keyword=" + keyword + "&pid=" + pid, true);
+    request.onreadystatechange = function() {
+        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+            var responseObject = JSON.parse(request.responseText);
+            if (!responseObject["success"]) {
+                callback("FAIL: " + responseObject["error"]);
+            } else {
+                callback(null, responseObject["result"]);
+            }
+        }
+    };
+    request.send();
 }
 
 /**

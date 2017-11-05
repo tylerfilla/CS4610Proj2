@@ -86,7 +86,7 @@ $success_result = "{\"success\": true, \"result\": {\"keywords\": [";
 // List all keywords for convenience
 for ($i = 0; $i < count($keywords); ++$i) {
     if ($i > 0) {
-        $success_result .= ",";
+        $success_result .= ", ";
     }
 
     $success_result .= "\"" . addslashes($keywords[$i]) . "\"";
@@ -124,7 +124,7 @@ for ($i = 0; $i < count($matched_pids); ++$i) {
     // List matching keywords
     for ($j = 0; $j < count($m_keywords); ++$j) {
         if ($j > 0) {
-            $success_result .= ",";
+            $success_result .= ", ";
         }
 
         $success_result .= "\"" . addslashes($m_keywords[$j]) . "\"";
