@@ -5,130 +5,185 @@
  */
 
 //
-// Keyword Search Handling
+// Keyword Input Handling
 //
 
-// TODO: This needs to be generalized so that keywords can be entered on individual problems in edit mode
-
 /**
- * All keywords currently entered in the search input box.
- * @type {Array}
+ * Functionality for a keyword input control.
+ *
+ * @constructor
+ * @param {HTMLElement} elInputArea The input area
+ * @param {HTMLElement} elChipArea The chip area
+ * @param {HTMLInputElement} elInputBox The input box
+ * @param {String} placeholderText Placeholder text for input box
  */
-var searchKeywords = [];
+function KeywordInput(elInputArea, elChipArea, elInputBox, placeholderText) {
+    this._elInputArea = elInputArea;
+    this._elChipArea = elChipArea;
+    this._elInputBox = elInputBox;
+    this._placeholderText = placeholderText;
+    this._keywords = [];
 
-/**
- * Render the current keywords as chips in the search area.
- */
-function renderChips() {
-    // Find stuff
-    var searchChips = document.getElementById("search-chips");
-    var searchInput = document.getElementById("search-input");
-
-    // Delete all existing search chips
-    while (searchChips.firstChild) {
-        searchChips.removeChild(searchChips.firstChild);
-    }
-
-    // Create new chips for search keywords
-    for (var i = 0; i < searchKeywords.length; ++i) {
-        // Root element
-        var chip = document.createElement("span");
-        chip.classList.add("chip");
-        chip.innerText = searchKeywords[i];
-
-        // Delete button
-        var chipDel = document.createElement("button");
-        chipDel.classList.add("chip-del");
-        chipDel.innerText = "x";
-
-        // Add elements to search chip area
-        searchChips.appendChild(chip);
-        chip.appendChild(chipDel);
-
-        // Add space between chips
-        searchChips.appendChild(document.createTextNode(" "));
-
-        // Listen for delete button clicks
-        const idx = i;
-        chipDel.addEventListener("click", function () {
-            // Remove the associated keyword
-            searchKeywords.splice(idx, 1);
-
-            // Re-render the chips
-            renderChips();
-        }, false);
-    }
-
-    // Show placeholder on search input box if no keywords entered
-    if (searchKeywords.length > 0) {
-        searchInput.placeholder = "";
-    } else {
-        searchInput.placeholder = "Keyword search";
-    }
+    // Further initialization
+    this._initialize();
 }
 
 /**
- * Initialize the keyword search system.
+ * Instance initializer.
+ * @private
  */
-function initializeSearch() {
-    // Find stuff
-    var searchInput = document.getElementById("search-input");
-    var searchInputArea = document.getElementById("search-input-area");
+KeywordInput.prototype._initialize = function() {
+    const thiz = this;
 
-    // Listen for search input key down
-    searchInput.addEventListener("keydown", function (event) {
-        if (event.key === ",") {
-            // Move all typed text into a new keyword
-            searchKeywords.push(this.value);
-            this.value = "";
+    // Listen for input box key down events
+    this._elInputBox.addEventListener("keydown", function(event) {
+        // If user is pressing the comma key or enter key
+        if (event.key === "," || event.keyCode === 13) {
+            // If the input box is not empty
+            if (this.value !== "") {
+                // Get all typed text...
+                var keyword = this.value;
+                this.value = "";
 
-            // Render search chips
-            renderChips();
+                // And add it as a new keyword
+                thiz.addKeyword(keyword);
 
-            // Do not accept the comma as part of a keyword
+                // Re-render search chips
+                thiz.render();
+            }
+
             event.preventDefault();
-
             return;
         }
 
-        // If input box is empty and backspace was pressed
-        if (event.keyCode === 8 && this.value === "") {
-            // Remove last keyword
-            searchKeywords.pop();
+        // If user is pressing the backspace key
+        if (event.keyCode === 8) {
+            // If the input box is empty
+            if (this.value === "") {
+                // Remove the last keyword
+                thiz._keywords.pop();
 
-            // Render search chips
-            renderChips();
+                // Re-render search chips
+                thiz.render();
 
-            return;
+                return;
+            }
         }
 
-        // Do not accept a space as the first character of a keyword
-        if (event.key === " " && this.value === "") {
-            event.preventDefault();
+        // If user is pressing the space key
+        if (event.key === " ") {
+            // If the input box is empty
+            if (this.value === "") {
+                // Block the space
+                event.preventDefault();
+            }
         }
     }, true);
 
-    // Listen for search input blur
-    searchInput.addEventListener("blur", function () {
-        // If search input box is not empty
+    // Listen for input box blur events
+    this._elInputBox.addEventListener("blur", function() {
+        // If the input box is not empty
         if (this.value !== "") {
-            // Move all typed text into a new keyword
-            searchKeywords.push(this.value);
+            // Get all typed text...
+            var keyword = this.value;
             this.value = "";
 
-            // Render search chips
-            renderChips();
+            // And add it as a new keyword
+            thiz.addKeyword(keyword);
+
+            // Re-render search chips
+            thiz.render();
         }
     }, false);
 
-    // Redirect all focus attempts from search input area to search input
-    searchInputArea.addEventListener("click", function () {
-        searchInput.focus();
+    // Listen for input area click events
+    this._elInputArea.addEventListener("click", function() {
+        // Focus the input box
+        thiz.focusInputBox();
     }, false);
+};
 
-    // Render search chips
-    renderChips();
-}
+/**
+ * Add a keyword.
+ *
+ * @param {String} keyword The keyword
+ */
+KeywordInput.prototype.addKeyword = function(keyword) {
+    this._keywords.push(keyword);
+};
+
+/**
+ * Remove a keyword.
+ *
+ * @param {String} keyword The keyword
+ */
+KeywordInput.prototype.removeKeyword = function(keyword) {
+    this.removeKeywordIdx(this._keywords.indexOf(keyword));
+};
+
+/**
+ * Remove a keyword by index.
+ *
+ * @param {Number} keywordIdx The keyword index
+ */
+KeywordInput.prototype.removeKeywordIdx = function(keywordIdx) {
+    this._keywords.splice(keywordIdx, 1);
+};
+
+/**
+ * Focus the input box.
+ */
+KeywordInput.prototype.focusInputBox = function() {
+    this._elInputBox.focus();
+};
+
+/**
+ * Render the keyword input control.
+ */
+KeywordInput.prototype.render = function() {
+    // Delete all existing keyword chips
+    while (this._elChipArea.firstChild) {
+        this._elChipArea.removeChild(this._elChipArea.firstChild);
+    }
+
+    // Create new chips for search keywords
+    for (var i = 0; i < this._keywords.length; ++i) {
+        const keyword = this._keywords[i];
+        const keywordIdx = i;
+
+        // Chip root element
+        var chip = document.createElement("span");
+        chip.classList.add("chip");
+        chip.innerText = keyword;
+
+        // Chip keyword delete button
+        var chipDel = document.createElement("button");
+        chipDel.classList.add("chip-del");
+        chipDel.innerText = "x";
+        chip.appendChild(chipDel);
+
+        // Listen for delete button clicks
+        const thiz = this;
+        chipDel.addEventListener("click", function() {
+            // Remove the associated keyword
+            thiz.removeKeywordIdx(keywordIdx);
+
+            // Re-render the chips
+            thiz.render();
+        }, false);
+
+        // Append to chip area, followed by a space
+        this._elChipArea.appendChild(chip);
+        this._elChipArea.appendChild(document.createTextNode(" "));
+    }
+
+    // Show placeholder text on search input box if no keywords entered
+    if (this._keywords.length > 0) {
+        this._elInputBox.placeholder = "";
+    } else {
+        this._elInputBox.placeholder = this._placeholderText;
+    }
+};
 
 //
 // Modal Dialog Handling
@@ -139,6 +194,12 @@ function initializeSearch() {
  * @type {number}
  */
 var editModalOutstandingProblem = -1;
+
+/**
+ * The keyword input control instance for the edit modal.
+ * @type {KeywordInput}
+ */
+var editModalKeywordInput;
 
 /**
  * The ID of the problem for which the trash modal is currently shown, or -1 if it isn't shown.
@@ -174,7 +235,7 @@ function onEditModalConfirm() {
         // Currently editing in create mode
 
         // Send a create request to the server
-        apiCreate(content, function (err, res) {
+        apiCreate(content, function(err, res) {
             if (err) {
                 console.error("Create failed: " + err);
                 return;
@@ -186,7 +247,7 @@ function onEditModalConfirm() {
         // Editing an existing problem
 
         // Send edit request to server
-        apiUpdate(editModalOutstandingProblem, content, function (err, res) {
+        apiUpdate(editModalOutstandingProblem, content, function(err, res) {
             if (err) {
                 console.error("Update failed: " + err);
                 return;
@@ -231,7 +292,7 @@ function onTrashModalConfirm() {
     }
 
     // Send trash move request to server
-    apiTrash("move", trashModalOutstandingProblem, function (err, res) {
+    apiTrash("move", trashModalOutstandingProblem, function(err, res) {
         if (err) {
             console.error("Move to trash failed: " + err);
             return;
@@ -253,7 +314,7 @@ function onTrashModalConfirm() {
  */
 function onEmptyTrashModalConfirm() {
     // Send trash empty request to server
-    apiTrash("empty", 0, function (err, res) {
+    apiTrash("empty", 0, function(err, res) {
         if (err) {
             console.error("Empty trash failed: " + err);
             return;
@@ -285,8 +346,17 @@ function showEditModal(createMode, problem, content) {
 
     var modalEdit = $("#modal-edit");
 
+    // Find keyword input stuff
+    var inputArea = modalEdit.find(".keyword-input-area").get(0);
+    var chipArea = modalEdit.find(".keyword-input-chip-area").get(0);
+    var inputBox = modalEdit.find(".keyword-input-box").get(0);
+
+    // Set up keyword input
+    editModalKeywordInput = new KeywordInput(inputArea, chipArea, inputBox, "Keywords");
+
     if (createMode) {
         modalEdit.find(".modal-title").text("Compose New Problem");
+        modalEdit.find(".keyword-input-box").val("");
     } else {
         modalEdit.find(".modal-title").text("Editing Problem " + problem);
     }
@@ -404,7 +474,7 @@ function renderResultTable(problemList) {
             rowAction.appendChild(document.createTextNode(" "));
 
             // Listen for move up action button clicks
-            actionUp.addEventListener("click", function () {
+            actionUp.addEventListener("click", function() {
                 alert("clicked MOVE UP action button on problem " + problemPid);
             }, false);
 
@@ -420,7 +490,7 @@ function renderResultTable(problemList) {
             rowAction.appendChild(document.createTextNode(" "));
 
             // Listen for move down action button clicks
-            actionDown.addEventListener("click", function () {
+            actionDown.addEventListener("click", function() {
                 alert("clicked MOVE DOWN action button on problem " + problemPid);
             }, false);
 
@@ -437,7 +507,7 @@ function renderResultTable(problemList) {
         rowAction.appendChild(document.createTextNode(" "));
 
         // Listen for edit action button clicks
-        actionEdit.addEventListener("click", function () {
+        actionEdit.addEventListener("click", function() {
             showEditModal(false, problemPid, problemContent);
         }, false);
 
@@ -452,7 +522,7 @@ function renderResultTable(problemList) {
         rowAction.appendChild(actionTrash);
 
         // Listen for trash action button clicks
-        actionTrash.addEventListener("click", function () {
+        actionTrash.addEventListener("click", function() {
             showTrashModal(problemPid);
         }, false);
 
@@ -471,7 +541,7 @@ function renderResultTable(problemList) {
  */
 function refreshResultTable() {
     // Get trash count
-    apiTrash("count", 0, function (err, res) {
+    apiTrash("count", 0, function(err, res) {
         if (err) {
             console.error("Could not refresh result table (get trash count): " + err);
             return;
@@ -490,7 +560,8 @@ function refreshResultTable() {
         if (resultTableMode === 1) {
             // Result table is in list mode
             // Send list request to server
-            apiList(1, 1, function (err, res) {
+            // TODO: Pagination
+            apiList(1, 1, function(err, res) {
                 if (err) {
                     console.error("Could not refresh result table (list): " + err);
                     return;
@@ -505,7 +576,8 @@ function refreshResultTable() {
         } else if (resultTableMode === 2) {
             // Result table is in search mode
             // Send search request to server
-            apiSearch(["triangle"], function (err, res) {
+            // TODO: Pagination?
+            apiSearch(["triangle"], function(err, res) {
                 if (err) {
                     console.error("Could not refresh result table (search): " + err);
                     return;
@@ -535,7 +607,7 @@ function apiCreate(content, callback) {
     var request = new XMLHttpRequest();
     request.open("POST", "/api/create.php", true);
     request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    request.onreadystatechange = function () {
+    request.onreadystatechange = function() {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
             if (!responseObject["success"]) {
@@ -558,7 +630,7 @@ function apiCreate(content, callback) {
 function apiList(pageNum, pageSize, callback) {
     var request = new XMLHttpRequest();
     request.open("GET", "/api/list.php?page_num=" + pageNum + "&page_size=" + pageSize, true);
-    request.onreadystatechange = function () {
+    request.onreadystatechange = function() {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
             if (!responseObject["success"]) {
@@ -581,7 +653,7 @@ function apiList(pageNum, pageSize, callback) {
 function apiMove(pid, dir, callback) {
     var request = new XMLHttpRequest();
     request.open("GET", "/api/move.php?pid=" + pid + "&dir=" + dir, true);
-    request.onreadystatechange = function () {
+    request.onreadystatechange = function() {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
             if (!responseObject["success"]) {
@@ -603,7 +675,7 @@ function apiMove(pid, dir, callback) {
 function apiSearch(keywords, callback) {
     var request = new XMLHttpRequest();
     request.open("GET", "/api/search.php?keywords=" + encodeURI(keywords.join(",")), true);
-    request.onreadystatechange = function () {
+    request.onreadystatechange = function() {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
             if (!responseObject["success"]) {
@@ -626,7 +698,7 @@ function apiSearch(keywords, callback) {
 function apiTrash(action, pid, callback) {
     var request = new XMLHttpRequest();
     request.open("GET", "/api/trash.php?action=" + action + "&pid=" + pid, true);
-    request.onreadystatechange = function () {
+    request.onreadystatechange = function() {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
             if (!responseObject["success"]) {
@@ -650,7 +722,7 @@ function apiUpdate(pid, content, callback) {
     var request = new XMLHttpRequest();
     request.open("POST", "/api/update.php", true);
     request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    request.onreadystatechange = function () {
+    request.onreadystatechange = function() {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
             if (!responseObject["success"]) {
@@ -672,7 +744,7 @@ function apiUpdate(pid, content, callback) {
  */
 function startEmptyTrash() {
     // Get trash count
-    apiTrash("count", 0, function (err, res) {
+    apiTrash("count", 0, function(err, res) {
         if (err) {
             console.error("Empty trash failed (get trash count): " + err);
             return;
@@ -701,14 +773,20 @@ function doUndoTrash() {
     });
 }
 
-//
-// Window Event Handling
-//
+/**
+ * The main keyword search input instance.
+ */
+var keywordSearchInput;
 
 // Listen for window load
-window.addEventListener("load", function () {
-    // Initialize keyword search system
-    initializeSearch();
+window.addEventListener("load", function() {
+    // Find stuff
+    var searchInputArea = document.getElementById("search-input-area");
+    var searchChipArea = document.getElementById("search-chips");
+    var searchInputBox = document.getElementById("search-input");
+
+    // Configure main keyword search input
+    keywordSearchInput = new KeywordInput(searchInputArea, searchChipArea, searchInputBox, "Keyword search");
 
     // Preliminary result table refresh
     refreshResultTable();

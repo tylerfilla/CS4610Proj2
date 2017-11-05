@@ -14,7 +14,11 @@
     width: 50%;
 }
 
-#search-area .chip {
+.keyword-input-area {
+    cursor: text;
+}
+
+.keyword-input-chip-area .chip {
     cursor: default;
     display: inline-flex;
     align-items: center;
@@ -23,7 +27,7 @@
     border-radius: 3px;
 }
 
-#search-area .chip-del {
+.keyword-input-chip-area .chip-del {
     display: inline-block;
     background: #f0f0f0;
     color: #a0a0a0;
@@ -37,15 +41,11 @@
     margin-left: 8px;
 }
 
-#search-area .chip-del:hover {
+.keyword-input-chip-area .chip-del:hover {
     background: #e0e0e0;
 }
 
-#search-input-area {
-    cursor: text;
-}
-
-#search-input {
+.keyword-input-box {
     display: inline-block;
     outline: none !important;
     border: none;
