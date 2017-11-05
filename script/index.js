@@ -135,10 +135,62 @@ function initializeSearch() {
 //
 
 /**
+ * The ID of the problem for which the edit modal is currently shown, or -1 if it isn't shown.
+ * @type {number}
+ */
+var editModalOutstandingProblem = -1;
+
+/**
  * The ID of the problem for which the trash modal is currently shown, or -1 if it isn't shown.
  * @type {number}
  */
 var trashModalOutstandingProblem = -1;
+
+/**
+ * Event handler. Called when the edit modal confirms.
+ */
+function onEditModalConfirm() {
+    if (editModalOutstandingProblem === -1) {
+        console.error("Edit modal not shown");
+        return;
+    }
+
+    // Send edit request to server
+    apiUpdate(editModalOutstandingProblem, "<content>", function (err, res) {
+        if (err) {
+            console.error("Edit failed");
+        }
+    });
+
+    // Hide modal
+    $("#modal-edit").modal("hide");
+
+    // Clear outstanding problem
+    editModalOutstandingProblem = -1;
+}
+
+/**
+ * Event handler. Called when the edit input area's content is changed by the user.
+ */
+function onEditInputAreaUpdate() {
+    if (editModalOutstandingProblem === -1) {
+        console.error("Edit modal not shown");
+        return;
+    }
+
+    // Get problem content source
+    var content = $("#edit-input-area").val();
+
+    // Update rendered preview
+    if (content !== "") {
+        $("#edit-preview-area").html(content);
+    } else {
+        $("#edit-preview-area").html("<i>There is no content to display.</i>");
+    }
+
+    // Rerun MathJax typesetting
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+}
 
 /**
  * Event handler. Called when the trash modal confirms.
@@ -150,7 +202,7 @@ function onTrashModalConfirm() {
     }
 
     // Send trash request to server
-    apiDelete(true, function(err, res) {
+    apiDelete(trashModalOutstandingProblem, true, function (err, res) {
         if (err) {
             console.error("Move to trash failed");
         }
@@ -164,7 +216,30 @@ function onTrashModalConfirm() {
 }
 
 /**
+ * Show the edit modal for the given problem.
+ *
+ * @param {Number} problem The ID of the target problem
+ * @param {String} content The initial problem content source to display
+ */
+function showEditModal(problem, content) {
+    // Set outstanding problem
+    editModalOutstandingProblem = problem;
+
+    // Configure and show modal
+    var modalEdit = $("#modal-edit");
+    modalEdit.find(".modal-title").text("Editing Problem " + problem);
+    modalEdit.modal("show");
+
+    // Set input area text to existing problem content source
+    $("#edit-input-area").val(content);
+
+    // Preliminary update
+    onEditInputAreaUpdate();
+}
+
+/**
  * Show the trash modal for the given problem.
+ *
  * @param {Number} problem The ID of the target problem
  */
 function showTrashModal(problem) {
@@ -202,8 +277,10 @@ function renderTable(problemList, searchMode) {
     for (var i = 0; i < problemList.length; ++i) {
         var problem = problemList[i];
 
+        // Decode the Base64-encoded problem content and add it directly as HTML
+        // We are trusting the server not to send anything malicious at this point
         const problemPid = problem["pid"];
-        const problemContent = problem["content"];
+        const problemContent = atob(problem["content"]);
 
         // Row root element
         var row = document.createElement("tr");
@@ -225,11 +302,9 @@ function renderTable(problemList, searchMode) {
         row.appendChild(rowProblem);
 
         // Problem content area
-        // Decode the Base64-encoded problem content and add it directly as HTML
-        // We are trusting the server not to send anything malicious at this point
         var problemContentArea = document.createElement("div");
         problemContentArea.classList.add("content-area");
-        problemContentArea.innerHTML = atob(problemContent);
+        problemContentArea.innerHTML = problemContent;
         rowProblem.appendChild(problemContentArea);
 
         // Row action column
@@ -281,8 +356,7 @@ function renderTable(problemList, searchMode) {
 
         // Listen for edit action button clicks
         actionEdit.addEventListener("click", function () {
-            // Show the edit modal
-            $("#modal-edit").modal("show");
+            showEditModal(problemPid, problemContent);
         }, false);
 
         // Icon for edit action button
@@ -335,12 +409,13 @@ function renderTableSearch(problemList) {
 /**
  * Communicate with the delete API endpoint.
  *
+ * @param {Number} pid The ID of the target problem
  * @param {Boolean} trash True to move the problem to the trash, otherwise false to permanently delete
  * @param {Function} callback A function to receive the result
  */
 function apiDelete(trash, callback) {
     var request = new XMLHttpRequest();
-    request.open("GET", "/api/delete.php?trash=" + encodeURI(trash), true);
+    request.open("GET", "/api/delete.php?pid=" + pid + "&trash=" + encodeURI(trash), true);
     request.onreadystatechange = function () {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
@@ -419,6 +494,30 @@ function apiTrash(action, callback) {
         }
     };
     request.send();
+}
+
+/**
+ * Communicate with the update API endpoint.
+ *
+ * @param pid The ID of the target problem
+ * @param content The new problem content
+ * @param callback A function to receive the result
+ */
+function apiUpdate(pid, content, callback) {
+    var request = new XMLHttpRequest();
+    request.open("POST", "/api/update.php", true);
+    request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    request.onreadystatechange = function () {
+        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+            var responseObject = JSON.parse(request.responseText);
+            if (!responseObject["success"]) {
+                callback("FAIL: " + responseObject["error"]);
+            } else {
+                callback(null, responseObject["result"]);
+            }
+        }
+    };
+    request.send("pid=" + pid + "&content=" + encodeURI(content));
 }
 
 //
