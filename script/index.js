@@ -155,18 +155,46 @@ function onEditModalConfirm() {
         return;
     }
 
-    // Send edit request to server
-    apiUpdate(editModalOutstandingProblem, "<content>", function (err, res) {
-        if (err) {
-            console.error("Edit failed");
-        }
-    });
+    // Get edited content
+    var content = $("#edit-input-area").val();
 
-    // Hide modal
-    $("#modal-edit").modal("hide");
+    // Complete the confirmation
+    function complete() {
+        // Clear outstanding problem
+        editModalOutstandingProblem = -1;
 
-    // Clear outstanding problem
-    editModalOutstandingProblem = -1;
+        // Hide modal
+        $("#modal-edit").modal("hide");
+
+        // Refresh result table
+        refreshResultTable();
+    }
+
+    if (editModalOutstandingProblem === -2) {
+        // Currently editing in create mode
+
+        // Send a create request to the server
+        apiCreate(content, function (err, res) {
+            if (err) {
+                console.error("Create failed: " + err);
+                return;
+            }
+
+            complete();
+        });
+    } else {
+        // Editing an existing problem
+
+        // Send edit request to server
+        apiUpdate(editModalOutstandingProblem, content, function (err, res) {
+            if (err) {
+                console.error("Update failed: " + err);
+                return;
+            }
+
+            complete();
+        });
+    }
 }
 
 /**
@@ -188,7 +216,8 @@ function onEditInputAreaUpdate() {
         $("#edit-preview-area").html("<i>There is no content to display.</i>");
     }
 
-    // Rerun MathJax typesetting
+    // Re-run MathJax typesetting
+    // Is there a way to specify only to typeset the modal dialog? Is that even necessary?
     MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
 }
 
@@ -201,18 +230,41 @@ function onTrashModalConfirm() {
         return;
     }
 
-    // Send trash request to server
-    apiTrash(trashModalOutstandingProblem, function (err, res) {
+    // Send trash move request to server
+    apiTrash("move", trashModalOutstandingProblem, function (err, res) {
         if (err) {
-            console.error("Move to trash failed");
+            console.error("Move to trash failed: " + err);
+            return;
         }
+
+        // Clear outstanding problem
+        trashModalOutstandingProblem = -1;
+
+        // Hide modal
+        $("#modal-trash").modal("hide");
+
+        // Refresh result table
+        refreshResultTable();
     });
+}
 
-    // Hide modal
-    $("#modal-trash").modal("hide");
+/**
+ * Event handler. Called when the empty trash modal confirms.
+ */
+function onEmptyTrashModalConfirm() {
+    // Send trash empty request to server
+    apiTrash("empty", 0, function (err, res) {
+        if (err) {
+            console.error("Empty trash failed: " + err);
+            return;
+        }
 
-    // Clear outstanding problem
-    trashModalOutstandingProblem = -1;
+        // Hide modal
+        $("#modal-empty-trash").modal("hide");
+
+        // Refresh result table
+        refreshResultTable();
+    });
 }
 
 /**
@@ -224,7 +276,12 @@ function onTrashModalConfirm() {
  */
 function showEditModal(createMode, problem, content) {
     // Set outstanding problem
-    editModalOutstandingProblem = problem;
+    if (createMode) {
+        // -2 represents a new problem
+        editModalOutstandingProblem = -2;
+    } else {
+        editModalOutstandingProblem = problem;
+    }
 
     var modalEdit = $("#modal-edit");
 
@@ -260,17 +317,35 @@ function showTrashModal(problem) {
     modalTrash.modal("show");
 }
 
+/**
+ * Show the empty trash modal.
+ *
+ * @param {Number} count The number of problems in the trash
+ */
+function showEmptyTrashModal(count) {
+    // Configure and show modal
+    var modalTrash = $("#modal-empty-trash");
+    modalTrash.find(".modal-body p").html("Are you sure you want to empty <b>" + count + " problems</b>"
+        + " from the trash? This cannot be undone.");
+    modalTrash.modal("show");
+}
+
 //
 // Result Table Handling
 //
 
 /**
+ * The result table mode. 1 for list or 2 for search.
+ * @type {number}
+ */
+var resultTableMode = 1;
+
+/**
  * Render a list of problems into the result table.
  *
  * @param {Array} problemList The list of problems
- * @param {Boolean} searchMode True to render in search mode, otherwise false
  */
-function renderTable(problemList, searchMode) {
+function renderResultTable(problemList) {
     // Find stuff
     var resultTable = document.getElementById("result-table");
     var resultTableTbody = resultTable.getElementsByTagName("tbody")[0];
@@ -321,7 +396,7 @@ function renderTable(problemList, searchMode) {
 
         // Don't allow problems to be reordered in search mode
         // This wouldn't make much sense, as they're already sorted by search relevance
-        if (!searchMode) {
+        if (resultTableMode !== 2) {
             // Move up action button
             var actionUp = document.createElement("button");
             actionUp.classList.add("btn", "btn-default");
@@ -392,21 +467,58 @@ function renderTable(problemList, searchMode) {
 }
 
 /**
- * Render a list of problems into the result table in list mode.
- *
- * @param {Array} problemList The list of problems
+ * Refresh the result table.
  */
-function renderTableList(problemList) {
-    renderTable(problemList, false);
-}
+function refreshResultTable() {
+    // Get trash count
+    apiTrash("count", 0, function(err, res) {
+        if (err) {
+            console.error("Could not refresh result table (get trash count): " + err);
+            return;
+        }
 
-/**
- * Render a list of problems into the result table in search mode.
- *
- * @param {Array} problemList The list of problems
- */
-function renderTableSearch(problemList) {
-    renderTable(problemList, true);
+        // The trash count
+        var trashCount = res["count"];
+
+        // Show trash buttons if something is in trash
+        if (trashCount > 0) {
+            $("#trash-buttons").show();
+        } else {
+            $("#trash-buttons").hide();
+        }
+
+        if (resultTableMode === 1) {
+            // Result table is in list mode
+            // Send list request to server
+            apiList(1, 1, function (err, res) {
+                if (err) {
+                    console.error("Could not refresh result table (list): " + err);
+                    return;
+                }
+
+                // Re-render result table
+                renderResultTable(res["problems"]);
+
+                // Re-run MathJax typesetting
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            });
+        } else if (resultTableMode === 2) {
+            // Result table is in search mode
+            // Send search request to server
+            apiSearch(["triangle"], function (err, res) {
+                if (err) {
+                    console.error("Could not refresh result table (search): " + err);
+                    return;
+                }
+
+                // Re-render result table
+                renderResultTable(res["problems"]);
+
+                // Re-run MathJax typesetting
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            });
+        }
+    });
 }
 
 //
@@ -552,6 +664,29 @@ function apiUpdate(pid, content, callback) {
 }
 
 //
+// App Functions
+//
+
+/**
+ * Begin the empty trash flow.
+ */
+function startEmptyTrash() {
+    // Get trash count
+    apiTrash("count", 0, function(err, res) {
+        if (err) {
+            console.error("Could not refresh result table (get trash count): " + err);
+            return;
+        }
+
+        // The trash count
+        var trashCount = res["count"];
+
+        // Continue flow with empty trash modal dialog
+        showEmptyTrashModal(trashCount);
+    });
+}
+
+//
 // Window Event Handling
 //
 
@@ -560,30 +695,6 @@ window.addEventListener("load", function () {
     // Initialize keyword search system
     initializeSearch();
 
-    apiList(1, 1, function (err, res) {
-        if (err) {
-            console.error("Unable to list problems");
-            return;
-        }
-
-        // Render the table in list mode
-        renderTableList(res["problems"]);
-
-        // Rerun MathJax typesetting on whole page
-        MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-    });
-
-    /*
-    apiSearch(["triangle"], function (err, res) {
-        if (err) {
-            console.error("Unable to search problems");
-            return;
-        }
-
-        renderTableSearch(res["problems"]);
-
-        // Rerun MathJax typesetting on whole page
-        MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-    });
-    */
+    // Preliminary result table refresh
+    refreshResultTable();
 }, false);

@@ -41,7 +41,7 @@ function action_empty($sql)
     // Delete all trashed problems
     $result = $sql->query("DELETE FROM `problem` WHERE `follows` = -1;");
     if (!$result) {
-        die("{\"success\": false, \"error\": \"Unable to empty trash: $sql->connect_error\"}");
+        die("{\"success\": false, \"error\": \"Unable to empty trash: $sql->error\"}");
     }
 
     // TODO: Do we need to delete all keywords, or will the foreign key constraint do this?
@@ -59,7 +59,7 @@ function action_count($sql)
     // Count all trashed problems
     $result = $sql->query("SELECT COUNT(*) AS 'count' FROM `problem` WHERE `follows` = -1;");
     if (!$result) {
-        die("{\"success\": false, \"error\": \"Unable to count trash: $sql->connect_error\"}");
+        die("{\"success\": false, \"error\": \"Unable to count trash: $sql->error\"}");
     }
 
     // Retrieve count
@@ -81,7 +81,7 @@ function action_move($sql, $pid)
     if ($sql_stmt = $sql->prepare("SELECT `follows` FROM `problem` WHERE `pid` = ?")) {
         $sql_stmt->bind_param("i", $pid);
         if (!$sql_stmt->execute()) {
-            die("{\"success\": false, \"error\": \"Unable to move to trash: $sql->connect_error\"}");
+            die("{\"success\": false, \"error\": \"Unable to move to trash (1): $sql->error\"}");
         }
         $target_follows = $sql_stmt->get_result()->fetch_assoc()["follows"];
         $sql_stmt->close();
@@ -92,7 +92,7 @@ function action_move($sql, $pid)
     if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = ? WHERE `follows` = ?")) {
         $sql_stmt->bind_param("ii", $target_follows, $pid);
         if (!$sql_stmt->execute()) {
-            die("{\"success\": false, \"error\": \"Unable to move to trash: $sql->connect_error\"}");
+            die("{\"success\": false, \"error\": \"Unable to move to trash (2): $sql->error\"}");
         }
         $sql_stmt->close();
     }
@@ -102,7 +102,7 @@ function action_move($sql, $pid)
     if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = -1 WHERE `pid` = ?")) {
         $sql_stmt->bind_param("i", $pid);
         if (!$sql_stmt->execute()) {
-            die("{\"success\": false, \"error\": \"Unable to move to trash: $sql->connect_error\"}");
+            die("{\"success\": false, \"error\": \"Unable to move to trash (3): $sql->error\"}");
         }
         $sql_stmt->close();
     }
@@ -111,7 +111,7 @@ function action_move($sql, $pid)
     if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `trashed` = NOW() WHERE `pid` = ?")) {
         $sql_stmt->bind_param("i", $pid);
         if (!$sql_stmt->execute()) {
-            die("{\"success\": false, \"error\": \"Unable to move to trash: $sql->connect_error\"}");
+            die("{\"success\": false, \"error\": \"Unable to move to trash (4): $sql->error\"}");
         }
         $sql_stmt->close();
     }
@@ -130,7 +130,7 @@ function action_undo($sql)
     // This will be targeted as the next problem to be restored
     $result = $sql->query("SELECT `pid` FROM `problem` WHERE `trashed` = (SELECT MAX(`trashed`) FROM `problem`);");
     if (!$result) {
-        die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->connect_error\"}");
+        die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->error\"}");
     }
     $target_pid = $result->fetch_assoc()["pid"];
 
@@ -138,7 +138,7 @@ function action_undo($sql)
     if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = ? WHERE `follows` = 0")) {
         $sql_stmt->bind_param("i", $target_pid);
         if (!$sql_stmt->execute()) {
-            die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->connect_error\"}");
+            die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->error\"}");
         }
         $sql_stmt->close();
     }
@@ -147,7 +147,7 @@ function action_undo($sql)
     if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `follows` = 0 WHERE `pid` = ?")) {
         $sql_stmt->bind_param("i", $target_pid);
         if (!$sql_stmt->execute()) {
-            die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->connect_error\"}");
+            die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->error\"}");
         }
         $sql_stmt->close();
     }
@@ -156,7 +156,7 @@ function action_undo($sql)
     if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `trashed` = NULL WHERE `pid` = ?")) {
         $sql_stmt->bind_param("i", $target_pid);
         if (!$sql_stmt->execute()) {
-            die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->connect_error\"}");
+            die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->error\"}");
         }
         $sql_stmt->close();
     }
