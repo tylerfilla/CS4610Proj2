@@ -556,7 +556,7 @@ function showEmptyTrashModal(count) {
  * The result table mode. 1 for list or 2 for search.
  * @type {number}
  */
-var resultTableMode = 1;
+var resultTableMode = 2;
 
 /**
  * The current result page.
@@ -657,7 +657,7 @@ function renderResultTable(problemList) {
         // Configure disabled next button
         pagerNextItem.classList.add("disabled");
         var pagerNextSpan = document.createElement("span");
-        pagerNextSpan.innerHTML = "&laquo;";
+        pagerNextSpan.innerHTML = "&raquo;";
         pagerNextItem.appendChild(pagerNextSpan);
     } else {
         // Add normal next button (link)
@@ -856,7 +856,7 @@ function refreshResultTable() {
         } else if (resultTableMode === 2) {
             // Result table is in search mode
             // Send search request to server
-            apiSearch(["triangle"], resultPage, resultPageSize, function(err, res) { // FIXME
+            apiSearch(["triangle", "line", "circle"], resultPage, resultPageSize, function(err, res) { // FIXME
                 if (err) {
                     console.error("Could not refresh result table (search): " + err);
                     return;
@@ -1002,11 +1002,14 @@ function apiMove(pid, dir, callback) {
  * Communicate with the search API endpoint.
  *
  * @param {Array} keywords The keywords for which to search
+ * @param {number} pageNum The desired page
+ * @param {number} pageSize The size of the page
  * @param {function} callback A function to receive the result
  */
-function apiSearch(keywords, callback) {
+function apiSearch(keywords, pageNum, pageSize, callback) {
     var request = new XMLHttpRequest();
-    request.open("GET", "/api/search.php?keywords=" + encodeURI(keywords.join(",")), true);
+    request.open("GET", "/api/search.php?keywords=" + encodeURI(keywords.join(",") + "&page_num=" + pageNum
+        + "&page_size=" + pageSize), true);
     request.onreadystatechange = function() {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
