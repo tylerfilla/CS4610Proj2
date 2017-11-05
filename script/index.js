@@ -559,6 +559,18 @@ function showEmptyTrashModal(count) {
 var resultTableMode = 1;
 
 /**
+ * The current result table page.
+ * @type {number}
+ */
+var resultTablePage = 1;
+
+/**
+ * The result table page size. Fixed at 20 per the assignment.
+ * @type {number}
+ */
+var resultTablePageSize = 20;
+
+/**
  * Render a list of problems into the result table.
  *
  * @param {Array} problemList The list of problems
@@ -725,8 +737,7 @@ function refreshResultTable() {
         if (resultTableMode === 1) {
             // Result table is in list mode
             // Send list request to server
-            // TODO: Pagination
-            apiList(1, 1, function(err, res) {
+            apiList(resultTablePage, resultTablePageSize, function(err, res) {
                 if (err) {
                     console.error("Could not refresh result table (list): " + err);
                     return;
@@ -741,8 +752,7 @@ function refreshResultTable() {
         } else if (resultTableMode === 2) {
             // Result table is in search mode
             // Send search request to server
-            // TODO: Pagination?
-            apiSearch(["triangle"], function(err, res) {
+            apiSearch(["triangle"], resultTablePage, resultTablePageSize, function(err, res) {
                 if (err) {
                     console.error("Could not refresh result table (search): " + err);
                     return;

@@ -48,7 +48,7 @@ while ($row = $result->fetch_assoc()) {
     $pids_raw[$row["follows"]] = $row["pid"];
 }
 
-// A list of problem IDs ordered according to user preference
+// A list of problem IDs ordered by user preference
 $pids_ordered = array();
 
 // Untangle the linked list structure of the $pids_raw array
@@ -57,17 +57,22 @@ while ($pid = $pids_raw[$pid]) {
     $pids_ordered[] = $pid;
 }
 
+// Compute pagination information (in order numbers, not problem IDs)
+$page_last = ceil(count($pids_ordered) / $p_page_size);
+$page_first_problem = ($p_page_num - 1) * $p_page_size + 1;
+$page_last_problem = $page_first_problem + $p_page_size - 1;
+
 $success_result = "{\"success\": true, \"result\": {\"problems\": [";
 
 // List all queried problems
-for ($i = 0; $i < count($pids_ordered); ++$i) {
-    if ($i > 0) {
-        $success_result .= ", ";
-    }
-
+for ($i = $page_first_problem - 1; $i < $page_last_problem; ++$i) {
     $pid = $pids_ordered[$i];
     $content = "";
     $keywords = array();
+
+    if (!$pid) {
+        break;
+    }
 
     // Retrieve problem content
     if ($sql_stmt = $sql->prepare("SELECT `content` FROM `problem` WHERE `pid` = ?")) {
@@ -98,6 +103,10 @@ for ($i = 0; $i < count($pids_ordered); ++$i) {
         die("{\"success\": false, \"error\": \"Unable to prepare to get keywords: $sql->error\"}");
     }
 
+    if ($i > 0) {
+        $success_result .= ", ";
+    }
+
     // Base64-encode the content, because there are just too many things to try to escape
     // We just assume that all the character-level stuff (i.e. encoding) will work out
     $content_b64 = base64_encode($content);
@@ -116,7 +125,7 @@ for ($i = 0; $i < count($pids_ordered); ++$i) {
     $success_result .= "]}";
 }
 
-$success_result .= "]}}";
+$success_result .= "], \"last_page\": $page_last}}";
 
 // Close database connection
 $sql->close();
