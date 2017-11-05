@@ -350,7 +350,29 @@
          */
         function apiList(pageNum, pageSize, callback) {
             var request = new XMLHttpRequest();
-            request.open("GET", "/api/query.php?page_num=" + pageNum + "&page_size=" + pageSize, true);
+            request.open("GET", "/api/list.php?page_num=" + pageNum + "&page_size=" + pageSize, true);
+            request.onreadystatechange = function () {
+                if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+                    var responseObject = JSON.parse(request.responseText);
+                    if (!responseObject["success"]) {
+                        callback("FAIL: " + responseObject["error"]);
+                    } else {
+                        callback(null, responseObject["result"]);
+                    }
+                }
+            };
+            request.send();
+        }
+
+        /**
+         * Communicate with the search API endpoint.
+         *
+         * @param {Array} keywords The keywords for which to search
+         * @param {Function} callback A function to receive the result
+         */
+        function apiSearch(keywords, callback) {
+            var request = new XMLHttpRequest();
+            request.open("GET", "/api/search.php?keywords=" + encodeURI(keywords.join(",")), true);
             request.onreadystatechange = function () {
                 if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
                     var responseObject = JSON.parse(request.responseText);
@@ -369,9 +391,24 @@
             // Initialize keyword search system
             initializeSearch();
 
+            /*
             apiList(function (err, res) {
                 if (err) {
                     console.error("Unable to list problems");
+                    return;
+                }
+
+                problemList = res["problems"];
+                renderTable();
+
+                // Rerun MathJax typesetting on whole page
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            });
+            */
+
+            apiSearch(["triangle"], function (err, res) {
+                if (err) {
+                    console.error("Unable to search problems");
                     return;
                 }
 
