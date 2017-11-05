@@ -7,25 +7,29 @@
  */
 
 //
-// Endpoint: query.php
-// Query a list of math problems.
+// Endpoint: search.php
+// Search for problems by keywords.
 //
 // GET parameters:
 // - "keywords": A comma-separated string of keywords
-// - "page_num": The requested page number
-// - "page_size": The uniform size of the requested pages
 //
 
 require_once "lib/config.php";
 
 // Get parameters
-$p_keywords = $_GET["keywords"];
+$p_keywords = filter_input(INPUT_GET, "keywords");
 
 // Open database connection
 $sql = new mysqli($db_host, $db_username, $db_password, $db_name);
 
 if ($sql->connect_errno) {
     die("{\"success\": false, \"error\": \"Unable to connect to database: $sql->connect_error\"}");
+}
+
+// Explode keyword array
+$keywords = array();
+if ($p_keywords) {
+    $keywords = explode(",", $p_keywords);
 }
 
 // Get ALL stored math problems
@@ -55,10 +59,21 @@ while ($pid = $pids_raw[$pid]) {
     $pids_ordered[] = $pid;
 }
 
-$success_result = "{\"success\": true, \"result\": {\"problems\": [";
+$success_result = "{\"success\": true, \"result\": {\"keywords\": [";
 
+// List all keywords for convenience
+for ($i = 0; $i < count($keywords); ++$i) {
+    if ($i > 0) {
+        $success_result .= ",";
+    }
+
+    $success_result .= "\"" . addslashes($keywords[$i]) . "\"";
+}
+
+$success_result .= "], \"problems\": [";
+
+// List all queried problems
 for ($i = 0; $i < count($pids_ordered); ++$i) {
-    // Add comma before each element after the first
     if ($i > 0) {
         $success_result .= ",";
     }
