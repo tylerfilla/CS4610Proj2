@@ -85,6 +85,8 @@ function action_move($sql, $pid)
         }
         $target_follows = $sql_stmt->get_result()->fetch_assoc()["follows"];
         $sql_stmt->close();
+    } else {
+        die("{\"success\": false, \"error\": \"Unable to prepare to move to trash (1): $sql->error\"}");
     }
 
     // Exclude target problem from linked list structure
@@ -95,6 +97,8 @@ function action_move($sql, $pid)
             die("{\"success\": false, \"error\": \"Unable to move to trash (2): $sql->error\"}");
         }
         $sql_stmt->close();
+    } else {
+        die("{\"success\": false, \"error\": \"Unable to prepare to move to trash (2): $sql->error\"}");
     }
 
     // Make target problem follow nothing else in the list
@@ -105,6 +109,8 @@ function action_move($sql, $pid)
             die("{\"success\": false, \"error\": \"Unable to move to trash (3): $sql->error\"}");
         }
         $sql_stmt->close();
+    } else {
+        die("{\"success\": false, \"error\": \"Unable to prepare to move to trash (3): $sql->error\"}");
     }
 
     // Update trashed timestamp on target problem
@@ -114,6 +120,8 @@ function action_move($sql, $pid)
             die("{\"success\": false, \"error\": \"Unable to move to trash (4): $sql->error\"}");
         }
         $sql_stmt->close();
+    } else {
+        die("{\"success\": false, \"error\": \"Unable to prepare to move to trash (4): $sql->error\"}");
     }
 
     echo "{\"success\": true}";
@@ -141,6 +149,8 @@ function action_undo($sql)
             die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->error\"}");
         }
         $sql_stmt->close();
+    } else {
+        die("{\"success\": false, \"error\": \"Unable to prepare to undo last move to trash: $sql->error\"}");
     }
 
     // Now insert the target problem first
@@ -150,6 +160,8 @@ function action_undo($sql)
             die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->error\"}");
         }
         $sql_stmt->close();
+    } else {
+        die("{\"success\": false, \"error\": \"Unable to prepare to undo last move to trash: $sql->error\"}");
     }
 
     // Clear the now-reinstated target problem's trashed timestamp
@@ -159,6 +171,8 @@ function action_undo($sql)
             die("{\"success\": false, \"error\": \"Unable to undo last move to trash: $sql->error\"}");
         }
         $sql_stmt->close();
+    } else {
+        die("{\"success\": false, \"error\": \"Unable to prepare to undo last move to trash: $sql->error\"}");
     }
 
     echo "{\"success\": true}";
