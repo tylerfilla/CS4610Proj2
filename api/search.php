@@ -23,8 +23,6 @@ $p_keywords = filter_input(INPUT_GET, "keywords");
 $p_page_num = filter_input(INPUT_GET, "page_num", FILTER_SANITIZE_NUMBER_INT);
 $p_page_size = filter_input(INPUT_GET, "page_size", FILTER_SANITIZE_NUMBER_INT);
 
-// TODO: Implement pagination
-
 // Open database connection
 $sql = new mysqli($db_host, $db_username, $db_password, $db_name);
 
@@ -92,17 +90,27 @@ for ($i = 0; $i < count($keywords); ++$i) {
     $success_result .= "\"" . addslashes($keywords[$i]) . "\"";
 }
 
+// Compute pagination information (in order numbers, not problem IDs)
+$page_last = -1;
+$page_first_problem = 1;
+$page_last_problem = count($matched_pids);
+if ($p_page_num) {
+    $page_last = ceil(count($matched_pids) / $p_page_size);
+    $page_first_problem = ($p_page_num - 1) * $p_page_size + 1;
+    $page_last_problem = $page_first_problem + $p_page_size - 1;
+}
+
 $success_result .= "], \"problems\": [";
 
 // List all matched problems
-for ($i = 0; $i < count($matched_pids); ++$i) {
-    if ($i > 0) {
-        $success_result .= ",";
-    }
-
+for ($i = $page_first_problem - 1; $i < $page_last_problem; ++$i) {
     $m_pid = $matched_pids[$i];
     $m_keywords = $matched_keywords[$m_pid];
     $m_content = null;
+
+    if (!$m_pid) {
+        break;
+    }
 
     if ($sql_stmt = $sql->prepare("SELECT `content` FROM `problem` WHERE `pid` = ?")) {
         $sql_stmt->bind_param("i", $m_pid);
@@ -113,6 +121,10 @@ for ($i = 0; $i < count($matched_pids); ++$i) {
         $sql_stmt->close();
     } else {
         die("{\"success\": false, \"error\": \"Unable to prepare to get content: $sql->error\"}");
+    }
+
+    if ($i > $page_first_problem - 1) {
+        $success_result .= ",";
     }
 
     // Base64-encode the content, because there are just too many things to try to escape

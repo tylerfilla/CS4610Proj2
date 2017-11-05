@@ -21,8 +21,6 @@ require_once "lib/config.php";
 $p_page_num = filter_input(INPUT_GET, "page_num", FILTER_SANITIZE_NUMBER_INT);
 $p_page_size = filter_input(INPUT_GET, "page_size", FILTER_SANITIZE_NUMBER_INT);
 
-// TODO: Implement pagination
-
 // Open database connection
 $sql = new mysqli($db_host, $db_username, $db_password, $db_name);
 
