@@ -26,7 +26,7 @@
                 <h4 class="modal-title"></h4>
             </div>
             <div class="modal-body">
-                <label for="edit-input-area">Problem source:</label><br />
+                <label for="edit-input-area">Problem source:</label><br/>
                 <textarea id="edit-input-area" cols="80" rows="5" onkeyup="onEditInputAreaUpdate()"></textarea>
                 <label for="edit-preview-area">Rendered problem:</label>
                 <div id="edit-preview-area"></div>
@@ -68,8 +68,24 @@
                 <input id="search-input" type="text" placeholder="Keyword search"/>
             </div>
             <div class="input-group-btn">
-                <button class="btn btn-default" type="submit"><span class="glyphicon glyphicon-search"></span></button>
+                <button class="btn btn-default"><span class="glyphicon glyphicon-search"></span></button>
             </div>
+        </div>
+    </div>
+    <div>
+        <button class="btn btn-default" onclick="showEditModal(true, 0, '')">
+            <span class="glyphicon glyphicon-pencil"></span>
+            Compose New
+        </button>
+        <div class="btn-group" role="group">
+            <button class="btn btn-default">
+                <span class="glyphicon glyphicon-trash"></span>
+                Empty Trash
+            </button>
+            <button class="btn btn-default">
+                <span class="glyphicon glyphicon-backward"></span>
+                Undo Trash
+            </button>
         </div>
     </div>
     <table id="result-table" class="table table-striped table-hover">

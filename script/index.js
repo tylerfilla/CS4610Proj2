@@ -216,18 +216,25 @@ function onTrashModalConfirm() {
 }
 
 /**
- * Show the edit modal for the given problem.
+ * Show the edit modal for the given problem. This is also repurposed for composition as needed.
  *
+ * @param {Boolean} createMode True to edit in create mode, otherwise false
  * @param {Number} problem The ID of the target problem
  * @param {String} content The initial problem content source to display
  */
-function showEditModal(problem, content) {
+function showEditModal(createMode, problem, content) {
     // Set outstanding problem
     editModalOutstandingProblem = problem;
 
-    // Configure and show modal
     var modalEdit = $("#modal-edit");
-    modalEdit.find(".modal-title").text("Editing Problem " + problem);
+
+    if (createMode) {
+        modalEdit.find(".modal-title").text("Compose New Problem");
+    } else {
+        modalEdit.find(".modal-title").text("Editing Problem " + problem);
+    }
+
+    // Show modal
     modalEdit.modal("show");
 
     // Set input area text to existing problem content source
@@ -356,7 +363,7 @@ function renderTable(problemList, searchMode) {
 
         // Listen for edit action button clicks
         actionEdit.addEventListener("click", function () {
-            showEditModal(problemPid, problemContent);
+            showEditModal(false, problemPid, problemContent);
         }, false);
 
         // Icon for edit action button
@@ -407,13 +414,36 @@ function renderTableSearch(problemList) {
 //
 
 /**
+ * Communicate with the create API endpoint.
+ *
+ * @param content The new problem content
+ * @param callback A function to receive the result
+ */
+function apiCreate(content, callback) {
+    var request = new XMLHttpRequest();
+    request.open("POST", "/api/create.php", true);
+    request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    request.onreadystatechange = function () {
+        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+            var responseObject = JSON.parse(request.responseText);
+            if (!responseObject["success"]) {
+                callback("FAIL: " + responseObject["error"]);
+            } else {
+                callback(null, responseObject["result"]);
+            }
+        }
+    };
+    request.send("content=" + encodeURI(content));
+}
+
+/**
  * Communicate with the delete API endpoint.
  *
  * @param {Number} pid The ID of the target problem
  * @param {Boolean} trash True to move the problem to the trash, otherwise false to permanently delete
  * @param {Function} callback A function to receive the result
  */
-function apiDelete(trash, callback) {
+function apiDelete(pid, trash, callback) {
     var request = new XMLHttpRequest();
     request.open("GET", "/api/delete.php?pid=" + pid + "&trash=" + encodeURI(trash), true);
     request.onreadystatechange = function () {
@@ -555,6 +585,4 @@ window.addEventListener("load", function () {
         MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
     });
     */
-
-
 }, false);
