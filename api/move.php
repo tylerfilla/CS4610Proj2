@@ -8,7 +8,11 @@
 
 //
 // Endpoint: move.php
-// Move an existing math problem.
+// Move an existing math problem up or down by one.
+//
+// GET parameters:
+// - "pid": The ID of the target problem
+// - "dir": "up" to move up one or "down" to move down one
 //
 
 require_once "lib/config.php";

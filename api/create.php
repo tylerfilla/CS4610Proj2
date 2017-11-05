@@ -17,7 +17,7 @@
 require_once "lib/config.php";
 
 // Get parameters
-$p_content = filter_input(INPUT_POST,"content");
+$p_content = filter_input(INPUT_POST, "content");
 
 // Open database connection
 $sql = new mysqli($db_host, $db_username, $db_password, $db_name);

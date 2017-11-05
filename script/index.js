@@ -202,7 +202,7 @@ function onTrashModalConfirm() {
     }
 
     // Send trash request to server
-    apiDelete(trashModalOutstandingProblem, true, function (err, res) {
+    apiTrash(trashModalOutstandingProblem, function (err, res) {
         if (err) {
             console.error("Move to trash failed");
         }
@@ -437,15 +437,15 @@ function apiCreate(content, callback) {
 }
 
 /**
- * Communicate with the delete API endpoint.
+ * Communicate with the list API endpoint.
  *
- * @param {Number} pid The ID of the target problem
- * @param {Boolean} trash True to move the problem to the trash, otherwise false to permanently delete
+ * @param {Number} pageNum The desired page
+ * @param {Number} pageSize The size of the page
  * @param {Function} callback A function to receive the result
  */
-function apiDelete(pid, trash, callback) {
+function apiList(pageNum, pageSize, callback) {
     var request = new XMLHttpRequest();
-    request.open("GET", "/api/delete.php?pid=" + pid + "&trash=" + encodeURI(trash), true);
+    request.open("GET", "/api/list.php?page_num=" + pageNum + "&page_size=" + pageSize, true);
     request.onreadystatechange = function () {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
@@ -460,15 +460,15 @@ function apiDelete(pid, trash, callback) {
 }
 
 /**
- * Communicate with the list API endpoint.
+ * Communicate with the move API endpoint.
  *
- * @param {Number} pageNum The desired page
- * @param {Number} pageSize The size of the page
+ * @param {String} pid The ID of the target problem
+ * @param {String} dir "up" to move up one or "down" to move down one
  * @param {Function} callback A function to receive the result
  */
-function apiList(pageNum, pageSize, callback) {
+function apiMove(pid, dir, callback) {
     var request = new XMLHttpRequest();
-    request.open("GET", "/api/list.php?page_num=" + pageNum + "&page_size=" + pageSize, true);
+    request.open("GET", "/api/move.php?pid=" + pid + "&dir=" + dir, true);
     request.onreadystatechange = function () {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
@@ -507,12 +507,13 @@ function apiSearch(keywords, callback) {
 /**
  * Communicate with the trash API endpoint.
  *
- * @param {String} action The action to take on the trash
+ * @param {String} action "empty", "count", "move", or "undo"
+ * @param {Number} pid The ID of the target problem
  * @param {Function} callback A function to receive the result
  */
-function apiTrash(action, callback) {
+function apiTrash(action, pid, callback) {
     var request = new XMLHttpRequest();
-    request.open("GET", "/api/trash.php?action=" + encodeURI(action), true);
+    request.open("GET", "/api/trash.php?action=" + action + "&pid=" + pid, true);
     request.onreadystatechange = function () {
         if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
             var responseObject = JSON.parse(request.responseText);
