@@ -4,6 +4,12 @@
  * Project 2
  */
 
+//
+// Keyword Search Handling
+//
+
+// TODO: This needs to be generalized so that keywords can be entered on individual problems in edit mode
+
 /**
  * All keywords currently entered in the search input box.
  * @type {Array}
@@ -124,15 +130,65 @@ function initializeSearch() {
     renderChips();
 }
 
-/**
- * The list of all received problems.
- */
-var problemList = [];
+//
+// Modal Dialog Handling
+//
 
 /**
- * Render the problem list into the result table.
+ * The ID of the problem for which the trash modal is currently shown, or -1 if it isn't shown.
+ * @type {number}
  */
-function renderTable() {
+var trashModalOutstandingProblem = -1;
+
+/**
+ * Event handler. Called when the trash modal confirms.
+ */
+function onTrashModalConfirm() {
+    if (trashModalOutstandingProblem === -1) {
+        console.error("Trash modal not shown");
+        return;
+    }
+
+    // Send trash request to server
+    apiDelete(true, function(err, res) {
+        if (err) {
+            console.error("Move to trash failed");
+        }
+    });
+
+    // Hide modal
+    $("#modal-trash").modal("hide");
+
+    // Clear outstanding problem
+    trashModalOutstandingProblem = -1;
+}
+
+/**
+ * Show the trash modal for the given problem.
+ * @param {Number} problem The ID of the target problem
+ */
+function showTrashModal(problem) {
+    // Set outstanding problem
+    trashModalOutstandingProblem = problem;
+
+    // Configure and show modal
+    var modalTrash = $("#modal-trash");
+    modalTrash.find(".modal-body p").html("Are you sure you want to move <b>problem " + problem + "</b>"
+        + " to the trash? You can undo this action later.");
+    modalTrash.modal("show");
+}
+
+//
+// Result Table Handling
+//
+
+/**
+ * Render a list of problems into the result table.
+ *
+ * @param {Array} problemList The list of problems
+ * @param {Boolean} searchMode True to render in search mode, otherwise false
+ */
+function renderTable(problemList, searchMode) {
     // Find stuff
     var resultTable = document.getElementById("result-table");
     var resultTableTbody = resultTable.getElementsByTagName("tbody")[0];
@@ -164,54 +220,58 @@ function renderTable() {
         rowId.appendChild(document.createTextNode(problemPid));
         row.appendChild(rowId);
 
-        // Row preview column
-        var rowPreview = document.createElement("td");
-        row.appendChild(rowPreview);
+        // Row problem column
+        var rowProblem = document.createElement("td");
+        row.appendChild(rowProblem);
 
-        // Problem content preview
+        // Problem content area
         // Decode the Base64-encoded problem content and add it directly as HTML
         // We are trusting the server not to send anything malicious at this point
-        var problemContentPreview = document.createElement("div");
-        problemContentPreview.classList.add("content-preview");
-        problemContentPreview.innerHTML = atob(problemContent);
-        rowPreview.appendChild(problemContentPreview);
+        var problemContentArea = document.createElement("div");
+        problemContentArea.classList.add("content-area");
+        problemContentArea.innerHTML = atob(problemContent);
+        rowProblem.appendChild(problemContentArea);
 
         // Row action column
         var rowAction = document.createElement("td");
         rowAction.style.whiteSpace = "nowrap";
         row.appendChild(rowAction);
 
-        // Move up action button
-        var actionUp = document.createElement("button");
-        actionUp.classList.add("btn", "btn-default");
-        rowAction.appendChild(actionUp);
-        rowAction.appendChild(document.createTextNode(" "));
+        // Don't allow problems to be reordered in search mode
+        // This wouldn't make much sense, as they're already sorted by search relevance
+        if (!searchMode) {
+            // Move up action button
+            var actionUp = document.createElement("button");
+            actionUp.classList.add("btn", "btn-default");
+            rowAction.appendChild(actionUp);
+            rowAction.appendChild(document.createTextNode(" "));
 
-        // Listen for move up action button clicks
-        actionUp.addEventListener("click", function () {
-            alert("clicked MOVE UP action button on problem " + problemPid);
-        }, false);
+            // Listen for move up action button clicks
+            actionUp.addEventListener("click", function () {
+                alert("clicked MOVE UP action button on problem " + problemPid);
+            }, false);
 
-        // Icon for move up action button
-        var actionUpIcon = document.createElement("span");
-        actionUpIcon.classList.add("glyphicon", "glyphicon-chevron-up");
-        actionUp.appendChild(actionUpIcon);
+            // Icon for move up action button
+            var actionUpIcon = document.createElement("span");
+            actionUpIcon.classList.add("glyphicon", "glyphicon-chevron-up");
+            actionUp.appendChild(actionUpIcon);
 
-        // Move down action button
-        var actionDown = document.createElement("button");
-        actionDown.classList.add("btn", "btn-default");
-        rowAction.appendChild(actionDown);
-        rowAction.appendChild(document.createTextNode(" "));
+            // Move down action button
+            var actionDown = document.createElement("button");
+            actionDown.classList.add("btn", "btn-default");
+            rowAction.appendChild(actionDown);
+            rowAction.appendChild(document.createTextNode(" "));
 
-        // Listen for move down action button clicks
-        actionDown.addEventListener("click", function () {
-            alert("clicked MOVE DOWN action button on problem " + problemPid);
-        }, false);
+            // Listen for move down action button clicks
+            actionDown.addEventListener("click", function () {
+                alert("clicked MOVE DOWN action button on problem " + problemPid);
+            }, false);
 
-        // Icon for move down action button
-        var actionDownIcon = document.createElement("span");
-        actionDownIcon.classList.add("glyphicon", "glyphicon-chevron-down");
-        actionDown.appendChild(actionDownIcon);
+            // Icon for move down action button
+            var actionDownIcon = document.createElement("span");
+            actionDownIcon.classList.add("glyphicon", "glyphicon-chevron-down");
+            actionDown.appendChild(actionDownIcon);
+        }
 
         // Edit action button
         var actionEdit = document.createElement("button");
@@ -221,7 +281,8 @@ function renderTable() {
 
         // Listen for edit action button clicks
         actionEdit.addEventListener("click", function () {
-            alert("clicked EDIT action button on problem " + problemPid);
+            // Show the edit modal
+            $("#modal-edit").modal("show");
         }, false);
 
         // Icon for edit action button
@@ -236,7 +297,7 @@ function renderTable() {
 
         // Listen for trash action button clicks
         actionTrash.addEventListener("click", function () {
-            alert("clicked TRASH action button on problem " + problemPid);
+            showTrashModal(problemPid);
         }, false);
 
         // Icon for trash action button
@@ -247,6 +308,50 @@ function renderTable() {
         // Add row to table
         resultTableTbody.appendChild(row);
     }
+}
+
+/**
+ * Render a list of problems into the result table in list mode.
+ *
+ * @param {Array} problemList The list of problems
+ */
+function renderTableList(problemList) {
+    renderTable(problemList, false);
+}
+
+/**
+ * Render a list of problems into the result table in search mode.
+ *
+ * @param {Array} problemList The list of problems
+ */
+function renderTableSearch(problemList) {
+    renderTable(problemList, true);
+}
+
+//
+// API Communication
+//
+
+/**
+ * Communicate with the delete API endpoint.
+ *
+ * @param {Boolean} trash True to move the problem to the trash, otherwise false to permanently delete
+ * @param {Function} callback A function to receive the result
+ */
+function apiDelete(trash, callback) {
+    var request = new XMLHttpRequest();
+    request.open("GET", "/api/delete.php?trash=" + encodeURI(trash), true);
+    request.onreadystatechange = function () {
+        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+            var responseObject = JSON.parse(request.responseText);
+            if (!responseObject["success"]) {
+                callback("FAIL: " + responseObject["error"]);
+            } else {
+                callback(null, responseObject["result"]);
+            }
+        }
+    };
+    request.send();
 }
 
 /**
@@ -294,36 +399,63 @@ function apiSearch(keywords, callback) {
     request.send();
 }
 
+/**
+ * Communicate with the trash API endpoint.
+ *
+ * @param {String} action The action to take on the trash
+ * @param {Function} callback A function to receive the result
+ */
+function apiTrash(action, callback) {
+    var request = new XMLHttpRequest();
+    request.open("GET", "/api/trash.php?action=" + encodeURI(action), true);
+    request.onreadystatechange = function () {
+        if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+            var responseObject = JSON.parse(request.responseText);
+            if (!responseObject["success"]) {
+                callback("FAIL: " + responseObject["error"]);
+            } else {
+                callback(null, responseObject["result"]);
+            }
+        }
+    };
+    request.send();
+}
+
+//
+// Window Event Handling
+//
+
 // Listen for window load
 window.addEventListener("load", function () {
     // Initialize keyword search system
     initializeSearch();
 
-    /*
-    apiList(function (err, res) {
+    apiList(1, 1, function (err, res) {
         if (err) {
             console.error("Unable to list problems");
             return;
         }
 
-        problemList = res["problems"];
-        renderTable();
+        // Render the table in list mode
+        renderTableList(res["problems"]);
 
         // Rerun MathJax typesetting on whole page
         MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
     });
-    */
 
+    /*
     apiSearch(["triangle"], function (err, res) {
         if (err) {
             console.error("Unable to search problems");
             return;
         }
 
-        problemList = res["problems"];
-        renderTable();
+        renderTableSearch(res["problems"]);
 
         // Rerun MathJax typesetting on whole page
         MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
     });
+    */
+
+
 }, false);

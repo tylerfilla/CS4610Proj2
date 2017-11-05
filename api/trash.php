@@ -7,19 +7,17 @@
  */
 
 //
-// Endpoint: delete.php
-// Delete an existing math problem, optionally forever.
+// Endpoint: trash.php
+// Manage the trash, a temporary place for problems before they get deleted.
 //
 // GET parameters:
-// - "pid": The ID of the target problem
-// - "trash": "true" to just move the problem to the trash or "false" (or omitted) to permanently delete
+// - "action": "count" to count trashed problems or "undo" to undo the last trashed problem
 //
 
 require_once "lib/config.php";
 
 // Get parameters
-$p_pid = filter_input(INPUT_GET, "pid", FILTER_SANITIZE_NUMBER_INT);
-$p_trash = filter_input(INPUT_GET, "trash", FILTER_SANITIZE_NUMBER_INT);
+$p_action = filter_input(INPUT_GET, "action");
 
 // Open database connection
 $sql = new mysqli($db_host, $db_username, $db_password, $db_name);

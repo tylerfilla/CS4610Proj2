@@ -2,19 +2,57 @@
 <html>
 <head>
     <title>Math Question Bank</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="style/index.css"/>
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
     <script type="text/javascript">
         MathJax.Hub.Config({
             tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']]}
         });
     </script>
-    <script type="text/javascript"
-            src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="script/index.js"></script>
 </head>
 <body>
+<div id="modal-edit" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">Edit Problem #</h4>
+            </div>
+            <div class="modal-body">
+                <label for="edit-input-area">Problem content:</label><br />
+                <textarea id="edit-input-area" cols="80" rows="5">this is where the problem content will go</textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="modal-trash" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">Moving to Trash</h4>
+            </div>
+            <div class="modal-body"><p></p></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" onclick="onTrashModalConfirm()">Move to trash</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div id="container">
     <div id="header">
         <h1>Math Question Bank</h1>
@@ -37,7 +75,7 @@
         <tr>
             <th>Order</th>
             <th>ID</th>
-            <th>Preview</th>
+            <th>Problem</th>
             <th>Action</th>
         </tr>
         </thead>
