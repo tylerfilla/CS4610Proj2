@@ -145,7 +145,7 @@ for ($i = $page_first_problem - 1; $i < $page_last_problem; ++$i) {
     $success_result .= "], \"content\": \"$content_b64\"}";
 }
 
-$success_result .= "]}}";
+$success_result .= "], \"last_page\": $page_last}}";
 
 // Close database connection
 $sql->close();
