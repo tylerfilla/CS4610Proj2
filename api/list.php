@@ -103,7 +103,7 @@ for ($i = $page_first_problem - 1; $i < $page_last_problem; ++$i) {
         die("{\"success\": false, \"error\": \"Unable to prepare to get keywords: $sql->error\"}");
     }
 
-    if ($i > 0) {
+    if ($i > $page_first_problem - 1) {
         $success_result .= ", ";
     }
 

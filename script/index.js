@@ -15,7 +15,7 @@
  * @param {HTMLElement} elInputArea The input area
  * @param {HTMLElement} elChipArea The chip area
  * @param {HTMLInputElement} elInputBox The input box
- * @param {String} placeholderText Placeholder text for input box
+ * @param {string} placeholderText Placeholder text for input box
  */
 function KeywordInput(elInputArea, elChipArea, elInputBox, placeholderText) {
     this._elInputArea = elInputArea;
@@ -150,7 +150,7 @@ KeywordInput.prototype._onInputAreaClick = function(event) {
 /**
  * Add a keyword.
  *
- * @param {String} keyword The keyword
+ * @param {string} keyword The keyword
  */
 KeywordInput.prototype.addKeyword = function(keyword) {
     this._keywords.push(keyword);
@@ -167,7 +167,7 @@ KeywordInput.prototype.addKeyword = function(keyword) {
 /**
  * Remove a keyword.
  *
- * @param {String} keyword The keyword
+ * @param {string} keyword The keyword
  */
 KeywordInput.prototype.removeKeyword = function(keyword) {
     this.removeKeywordIdx(this._keywords.indexOf(keyword));
@@ -176,7 +176,7 @@ KeywordInput.prototype.removeKeyword = function(keyword) {
 /**
  * Remove a keyword by index.
  *
- * @param {Number} keywordIdx The keyword index
+ * @param {number} keywordIdx The keyword index
  */
 KeywordInput.prototype.removeKeywordIdx = function(keywordIdx) {
     var keyword = this._keywords[keywordIdx];
@@ -444,8 +444,8 @@ function onEmptyTrashModalConfirm() {
  * Show the edit modal for the given problem. This is also repurposed for composition as needed.
  *
  * @param {Boolean} createMode True to edit in create mode, otherwise false
- * @param {Number} problem The ID of the target problem
- * @param {String} content The initial problem content source to display
+ * @param {number} problem The ID of the target problem
+ * @param {string} content The initial problem content source to display
  * @param {Array} keywords The initial problem keywords to display
  */
 function showEditModal(createMode, problem, content, keywords) {
@@ -522,7 +522,7 @@ function showEditModal(createMode, problem, content, keywords) {
 /**
  * Show the trash modal for the given problem.
  *
- * @param {Number} problem The ID of the target problem
+ * @param {number} problem The ID of the target problem
  */
 function showTrashModal(problem) {
     // Set outstanding problem
@@ -538,7 +538,7 @@ function showTrashModal(problem) {
 /**
  * Show the empty trash modal.
  *
- * @param {Number} count The number of problems in the trash
+ * @param {number} count The number of problems in the trash
  */
 function showEmptyTrashModal(count) {
     // Configure and show modal
@@ -549,7 +549,7 @@ function showEmptyTrashModal(count) {
 }
 
 //
-// Result Table Handling
+// Result Handling
 //
 
 /**
@@ -559,26 +559,123 @@ function showEmptyTrashModal(count) {
 var resultTableMode = 1;
 
 /**
- * The current result table page.
+ * The current result page.
  * @type {number}
  */
-var resultTablePage = 1;
+var resultPage = 1;
 
 /**
- * The result table page size. Fixed at 20 per the assignment.
+ * The result page size. Fixed at 20 per the assignment.
  * @type {number}
  */
-var resultTablePageSize = 20;
+var resultPageSize = 20;
 
 /**
- * Render a list of problems into the result table.
+ * The number of the last result page.
+ * @type {number}
+ */
+var resultLastPage = -1;
+
+/**
+ * Render a list of problems into the result table. Hijacked for other result-related rendering.
  *
  * @param {Array} problemList The list of problems
  */
 function renderResultTable(problemList) {
     // Find stuff
+    var resultPager = document.getElementById("result-pager");
     var resultTable = document.getElementById("result-table");
     var resultTableTbody = resultTable.getElementsByTagName("tbody")[0];
+
+    //
+    // Render Pager
+    //
+
+    // Clear pager
+    while (resultPager.firstChild) {
+        resultPager.removeChild(resultPager.firstChild);
+    }
+
+    // Add previous button list item to pager
+    var pagerPreviousItem = document.createElement("li");
+    resultPager.append(pagerPreviousItem);
+
+    if (resultPage === 1) {
+        // Configure disabled previous button
+        pagerPreviousItem.classList.add("disabled");
+        var pagerPreviousSpan = document.createElement("span");
+        pagerPreviousSpan.innerHTML = "&laquo;";
+        pagerPreviousItem.appendChild(pagerPreviousSpan);
+    } else {
+        // Add normal previous button (link)
+        var pagerPreviousAnchor = document.createElement("a");
+        pagerPreviousAnchor.href = "#";
+        pagerPreviousAnchor.innerHTML = "&laquo;";
+        pagerPreviousItem.appendChild(pagerPreviousAnchor);
+
+        // Listen for previous button clicks
+        pagerPreviousAnchor.addEventListener("click", function(event) {
+            goPreviousPage();
+            event.preventDefault();
+        }, true);
+    }
+
+    // Populate pager with...pages
+    for (var page = 1; page <= resultLastPage; ++page) {
+        // List item for this page
+        var pagerDirectPageItem = document.createElement("li");
+        resultPager.append(pagerDirectPageItem);
+
+        // If this is the current result page
+        if (page === resultPage) {
+            // Configure active direct page button
+            pagerDirectPageItem.classList.add("active");
+            var pagerDirectPageSpan = document.createElement("span");
+            pagerDirectPageSpan.innerText = page;
+            pagerDirectPageItem.appendChild(pagerDirectPageSpan);
+        } else {
+            // Add direct page button (link)
+            var pagerDirectPageAnchor = document.createElement("a");
+            pagerDirectPageAnchor.href = "#";
+            pagerDirectPageAnchor.innerText = page;
+            pagerDirectPageItem.appendChild(pagerDirectPageAnchor);
+
+            // Listen for direct page button clicks
+            const constPage = page;
+            pagerDirectPageAnchor.addEventListener("click", function(event) {
+                goPage(constPage);
+                event.preventDefault();
+            }, true);
+        }
+    }
+
+    // Add next button list item to pager
+    var pagerNextItem = document.createElement("li");
+    resultPager.append(pagerNextItem);
+
+    if (resultPage === resultLastPage) {
+        // Configure disabled next button
+        pagerNextItem.classList.add("disabled");
+        var pagerNextSpan = document.createElement("span");
+        pagerNextSpan.innerHTML = "&laquo;";
+        pagerNextItem.appendChild(pagerNextSpan);
+    } else {
+        // Add normal next button (link)
+        var pagerNextAnchor = document.createElement("a");
+        pagerNextAnchor.href = "#";
+        pagerNextAnchor.innerHTML = "&raquo;";
+        pagerNextItem.appendChild(pagerNextAnchor);
+
+        // Listen for next button clicks
+        pagerNextAnchor.addEventListener("click", function(event) {
+            goNextPage();
+            event.preventDefault();
+        }, true);
+    }
+
+    //
+    // Render Actual Result Table
+    //
 
     // Delete all existing table rows
     while (resultTableTbody.firstChild) {
@@ -734,38 +831,74 @@ function refreshResultTable() {
             $("#trash-buttons").hide();
         }
 
+        function complete(lastPage, problemList) {
+            // Remember last page for pagination
+            resultLastPage = lastPage;
+
+            // Re-render result table
+            renderResultTable(problemList);
+
+            // Re-run MathJax typesetting
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+        }
+
         if (resultTableMode === 1) {
             // Result table is in list mode
             // Send list request to server
-            apiList(resultTablePage, resultTablePageSize, function(err, res) {
+            apiList(resultPage, resultPageSize, function(err, res) {
                 if (err) {
                     console.error("Could not refresh result table (list): " + err);
                     return;
                 }
 
-                // Re-render result table
-                renderResultTable(res["problems"]);
-
-                // Re-run MathJax typesetting
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                complete(res["last_page"], res["problems"]);
             });
         } else if (resultTableMode === 2) {
             // Result table is in search mode
             // Send search request to server
-            apiSearch(["triangle"], resultTablePage, resultTablePageSize, function(err, res) {
+            apiSearch(["triangle"], resultPage, resultPageSize, function(err, res) { // FIXME
                 if (err) {
                     console.error("Could not refresh result table (search): " + err);
                     return;
                 }
 
-                // Re-render result table
-                renderResultTable(res["problems"]);
-
-                // Re-run MathJax typesetting
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+                complete(res["last_page"], res["problems"]);
             });
         }
     });
+}
+
+/**
+ * Go to a particular page.
+ *
+ * @param {number} page The desired page number
+ */
+function goPage(page) {
+    // Validate the desired page
+    // We check against an old copy of the last page. Might this be a problem?
+    if (page <= 0 || page > resultLastPage)
+        return;
+
+    // Set the current page to the desired page
+    // This is a bit counterintuitive, but works out
+    resultPage = page;
+
+    // Refresh the result table, thus causing reuptake of the result page value
+    refreshResultTable();
+}
+
+/**
+ * Go to the next page.
+ */
+function goNextPage() {
+    goPage(resultPage + 1);
+}
+
+/**
+ * Go to the previous page.
+ */
+function goPreviousPage() {
+    goPage(resultPage - 1);
 }
 
 //
@@ -775,8 +908,8 @@ function refreshResultTable() {
 /**
  * Communicate with the create API endpoint.
  *
- * @param content The new problem content
- * @param callback A function to receive the result
+ * @param {string} content The new problem content
+ * @param {function} callback A function to receive the result
  */
 function apiCreate(content, callback) {
     var request = new XMLHttpRequest();
@@ -798,10 +931,10 @@ function apiCreate(content, callback) {
 /**
  * Communicate with the keyword API endpoint.
  *
- * @param action "add", "remove", or "suggest"
- * @param keyword The keyword text
- * @param pid The ID of the target problem
- * @param callback A function to receive the result
+ * @param {string} action "add", "remove", or "suggest"
+ * @param {string} keyword The keyword text
+ * @param {number} pid The ID of the target problem
+ * @param {function} callback A function to receive the result
  */
 function apiKeyword(action, keyword, pid, callback) {
     var request = new XMLHttpRequest();
@@ -822,9 +955,9 @@ function apiKeyword(action, keyword, pid, callback) {
 /**
  * Communicate with the list API endpoint.
  *
- * @param {Number} pageNum The desired page
- * @param {Number} pageSize The size of the page
- * @param {Function} callback A function to receive the result
+ * @param {number} pageNum The desired page
+ * @param {number} pageSize The size of the page
+ * @param {function} callback A function to receive the result
  */
 function apiList(pageNum, pageSize, callback) {
     var request = new XMLHttpRequest();
@@ -845,9 +978,9 @@ function apiList(pageNum, pageSize, callback) {
 /**
  * Communicate with the move API endpoint.
  *
- * @param {String} pid The ID of the target problem
- * @param {String} dir "up" or "down"
- * @param {Function} callback A function to receive the result
+ * @param {string} pid The ID of the target problem
+ * @param {string} dir "up" or "down"
+ * @param {function} callback A function to receive the result
  */
 function apiMove(pid, dir, callback) {
     var request = new XMLHttpRequest();
@@ -869,7 +1002,7 @@ function apiMove(pid, dir, callback) {
  * Communicate with the search API endpoint.
  *
  * @param {Array} keywords The keywords for which to search
- * @param {Function} callback A function to receive the result
+ * @param {function} callback A function to receive the result
  */
 function apiSearch(keywords, callback) {
     var request = new XMLHttpRequest();
@@ -890,9 +1023,9 @@ function apiSearch(keywords, callback) {
 /**
  * Communicate with the trash API endpoint.
  *
- * @param {String} action "empty", "count", "move", or "undo"
- * @param {Number} pid The ID of the target problem
- * @param {Function} callback A function to receive the result
+ * @param {string} action "empty", "count", "move", or "undo"
+ * @param {number} pid The ID of the target problem
+ * @param {function} callback A function to receive the result
  */
 function apiTrash(action, pid, callback) {
     var request = new XMLHttpRequest();
@@ -913,9 +1046,9 @@ function apiTrash(action, pid, callback) {
 /**
  * Communicate with the update API endpoint.
  *
- * @param pid The ID of the target problem
- * @param content The new problem content
- * @param callback A function to receive the result
+ * @param {number} pid The ID of the target problem
+ * @param {string} content The new problem content
+ * @param {function} callback A function to receive the result
  */
 function apiUpdate(pid, content, callback) {
     var request = new XMLHttpRequest();
