@@ -342,14 +342,15 @@
         }
 
         /**
-         * Communicate with the query API endpoint.
+         * Communicate with the list API endpoint.
          *
-         * @param {Array} keywords The keywords for the query
+         * @param {Number} pageNum The desired page
+         * @param {Number} pageSize The size of the page
          * @param {Function} callback A function to receive the result
          */
-        function apiQuery(keywords, callback) {
+        function apiList(pageNum, pageSize, callback) {
             var request = new XMLHttpRequest();
-            request.open("GET", "/api/query.php?keywords=" + encodeURI(keywords.join(",")), true);
+            request.open("GET", "/api/query.php?page_num=" + pageNum + "&page_size=" + pageSize, true);
             request.onreadystatechange = function () {
                 if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
                     var responseObject = JSON.parse(request.responseText);
@@ -368,11 +369,9 @@
             // Initialize keyword search system
             initializeSearch();
 
-            // Send a query for "triangle"
-            // TODO: Connect this to search bar
-            apiQuery(["triangle"], function (err, res) {
+            apiList(function (err, res) {
                 if (err) {
-                    console.error("Unable to query for problems");
+                    console.error("Unable to list problems");
                     return;
                 }
 
