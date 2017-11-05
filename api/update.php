@@ -28,6 +28,14 @@ if ($sql->connect_errno) {
     die("{\"success\": false, \"error\": \"Unable to connect to database: $sql->connect_error\"}");
 }
 
+// Update target problem's content
+if ($sql_stmt = $sql->prepare("UPDATE `problem` SET `content` = ? WHERE `pid` = ?")) {
+    $sql_stmt->bind_param("i", $p_content, $p_pid);
+    if (!$sql_stmt->execute()) {
+        die("{\"success\": false, \"error\": \"Unable to update problem: $sql->connect_error\"}");
+    }
+}
+
 // Close database connection
 $sql->close();
 
