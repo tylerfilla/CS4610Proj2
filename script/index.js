@@ -729,10 +729,14 @@ function renderResultTable(problemList) {
         problemContentArea.innerHTML = problemContent;
         rowProblem.appendChild(problemContentArea);
 
-        // In search mode, list matched keywords
-        if (resultMode === 2) {
+        // List either all problem keywords or just matched keywords
+        if (resultMode === 1) {
+            var problemKeywordsArea = document.createElement("div");
+            problemKeywordsArea.innerHTML = "<b>Keywords: </b>" + problemKeywords.join(", ");
+            problemContentArea.appendChild(problemKeywordsArea);
+        } else if (resultMode === 2) {
             var problemMatchedKeywordsArea = document.createElement("div");
-            problemMatchedKeywordsArea.innerHTML = "<b>Matched: </b>" + problemMatchedKeywords.join(", ");
+            problemMatchedKeywordsArea.innerHTML = "<b>Matched keywords: </b>" + problemMatchedKeywords.join(", ");
             problemContentArea.appendChild(problemMatchedKeywordsArea);
         }
 
