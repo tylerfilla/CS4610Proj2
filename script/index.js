@@ -827,6 +827,17 @@ function renderResultTable(problemList) {
         // Add row to table
         resultTableTbody.appendChild(row);
     }
+
+    // Hide or show no results alert
+    if (resultMode === 2) {
+        if (problemList.length === 0) {
+            $("#no-results-alert").attr("style", "display: inline-block;");
+        } else {
+            $("#no-results-alert").attr("style", "display: none;");
+        }
+    } else {
+        $("#no-results-alert").attr("style", "display: none;");
+    }
 }
 
 /**
@@ -896,12 +907,6 @@ function refreshResults() {
 
                 // Get problem list
                 var problemList = res["problems"];
-
-                // Cancel search if nothing is returned
-                if (problemList.length === 0) {
-                    doCancelSearch();
-                    return;
-                }
 
                 // Complete refresh
                 complete(res["last_page"], problemList);
