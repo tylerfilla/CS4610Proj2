@@ -61,6 +61,10 @@
     resize: vertical;
 }
 
+#edit-keyword-input-area {
+    height: 1%;
+}
+
 #result-table {
     text-align: start;
 }
