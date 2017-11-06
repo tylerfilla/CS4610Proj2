@@ -312,6 +312,14 @@ function onEditModalConfirm() {
     // Get edited content
     var content = $("#edit-input-area").val();
 
+    // Require non-empty content
+    if (content === "") {
+        // Show content empty alert
+        $("#edit-content-empty-alert").show();
+
+        return;
+    }
+
     // Get keywords
     var keywords = editModalKeywordInput.getKeywords();
 
@@ -458,6 +466,9 @@ function showEditModal(createMode, problem, content, keywords) {
     }
 
     var modalEdit = $("#modal-edit");
+
+    // Hide content empty alert
+    $("#edit-content-empty-alert").hide();
 
     // Find keyword input stuff
     var inputArea = modalEdit.find(".keyword-input-area").get(0);
