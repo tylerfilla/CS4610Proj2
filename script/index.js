@@ -677,8 +677,6 @@ function renderResultTable(problemList) {
     // Render Actual Result Table
     //
 
-    // TODO: Sort problem list by relevance
-
     // Delete all existing table rows
     while (resultTableTbody.firstChild) {
         resultTableTbody.removeChild(resultTableTbody.firstChild);
@@ -693,6 +691,7 @@ function renderResultTable(problemList) {
         const problemPid = problem["pid"];
         const problemContent = atob(problem["content"]);
         const problemKeywords = problem["keywords"];
+        const problemMatchedKeywords = problem["matched_keywords"];
 
         // Row root element
         var row = document.createElement("tr");
@@ -721,9 +720,9 @@ function renderResultTable(problemList) {
 
         // In search mode, list matched keywords
         if (resultMode === 2) {
-            var problemMatchedKeywords = document.createElement("div");
-            problemMatchedKeywords.innerHTML = "<b>Matched: </b>" + problemKeywords.join(", ");
-            problemContentArea.appendChild(problemMatchedKeywords);
+            var problemMatchedKeywordsArea = document.createElement("div");
+            problemMatchedKeywordsArea.innerHTML = "<b>Matched: </b>" + problemMatchedKeywords.join(", ");
+            problemContentArea.appendChild(problemMatchedKeywordsArea);
         }
 
         // Row action column
@@ -858,7 +857,7 @@ function refreshResults() {
             // Hide cancel search button
             $("#cancel-search-button").hide();
 
-            // Result table is in list mode
+            // Results are in list mode
             // Send list request to server
             apiList(resultPage, resultPageSize, function(err, res) {
                 if (err) {
@@ -866,6 +865,7 @@ function refreshResults() {
                     return;
                 }
 
+                // Complete refresh
                 complete(res["last_page"], res["problems"]);
             });
         } else if (resultMode === 2) {
@@ -875,15 +875,25 @@ function refreshResults() {
             // Show cancel search button
             $("#cancel-search-button").show();
 
-            // Result table is in search mode
-            // Send search request to server
+            // Results are in search mode
+            // Send search request to server with the keywords currently entered in the search bar
             apiSearch(keywordSearchInput.getKeywords(), resultPage, resultPageSize, function(err, res) {
                 if (err) {
                     console.error("Could not refresh result table (search): " + err);
                     return;
                 }
 
-                complete(res["last_page"], res["problems"]);
+                // Get problem list
+                var problemList = res["problems"];
+
+                // Cancel search if nothing is returned
+                if (problemList.length === 0) {
+                    doCancelSearch();
+                    return;
+                }
+
+                // Complete refresh
+                complete(res["last_page"], problemList);
             });
         }
     });

@@ -80,6 +80,15 @@ foreach ($keywords as $keyword) {
     }
 }
 
+// Sort matches by relevance
+function match_compare($pid_a, $pid_b)
+{
+    global $matched_keywords;
+    return count($matched_keywords[$pid_a]) < count($matched_keywords[$pid_b]);
+}
+
+usort($matched_pids, "match_compare");
+
 $success_result = "{\"success\": true, \"result\": {\"keywords\": [";
 
 // List all keywords for convenience
@@ -105,23 +114,42 @@ $success_result .= "], \"problems\": [";
 
 // List all matched problems
 for ($i = $page_first_problem - 1; $i < $page_last_problem; ++$i) {
-    $m_pid = $matched_pids[$i];
-    $m_keywords = $matched_keywords[$m_pid];
-    $m_content = null;
+    $problem_pid = $matched_pids[$i];
+    $problem_keywords = array();
+    $problem_matched_keywords = $matched_keywords[$problem_pid];
+    $problem_content = null;
 
-    if (!$m_pid) {
+    if (!$problem_pid) {
         break;
     }
 
+    // Retrieve problem content
     if ($sql_stmt = $sql->prepare("SELECT `content` FROM `problem` WHERE `pid` = ?")) {
-        $sql_stmt->bind_param("i", $m_pid);
+        $sql_stmt->bind_param("i", $problem_pid);
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to get content: $sql->error\"}");
         }
-        $m_content = $sql_stmt->get_result()->fetch_assoc()["content"];
+        $problem_content = $sql_stmt->get_result()->fetch_assoc()["content"];
         $sql_stmt->close();
     } else {
         die("{\"success\": false, \"error\": \"Unable to prepare to get content: $sql->error\"}");
+    }
+
+    // Retrieve problem keywords
+    if ($sql_stmt = $sql->prepare("SELECT `word` FROM `keyword` WHERE `pid` = ?")) {
+        $sql_stmt->bind_param("i", $pid);
+        if (!$sql_stmt->execute()) {
+            die("{\"success\": false, \"error\": \"Unable to get keywords: $sql->error\"}");
+        }
+
+        $result = $sql_stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $problem_keywords[] = $row["word"];
+        }
+
+        $sql_stmt->close();
+    } else {
+        die("{\"success\": false, \"error\": \"Unable to prepare to get keywords: $sql->error\"}");
     }
 
     if ($i > $page_first_problem - 1) {
@@ -130,17 +158,28 @@ for ($i = $page_first_problem - 1; $i < $page_last_problem; ++$i) {
 
     // Base64-encode the content, because there are just too many things to try to escape
     // We just assume that all the character-level stuff (i.e. encoding) will work out
-    $content_b64 = base64_encode($m_content);
+    $content_b64 = base64_encode($problem_content);
 
-    $success_result .= "{\"pid\": $m_pid, \"num_keywords\": " . count($m_keywords) . ", \"keywords\": [";
+    $success_result .= "{\"pid\": $problem_pid, \"keywords\": [";
 
-    // List matching keywords
-    for ($j = 0; $j < count($m_keywords); ++$j) {
+    // List all keywords
+    for ($j = 0; $j < count($problem_keywords); ++$j) {
         if ($j > 0) {
             $success_result .= ", ";
         }
 
-        $success_result .= "\"" . addslashes($m_keywords[$j]) . "\"";
+        $success_result .= "\"" . addslashes($problem_keywords[$j]) . "\"";
+    }
+
+    $success_result .= "], \"matched_keywords\": [";
+
+    // List matching keywords
+    for ($j = 0; $j < count($problem_matched_keywords); ++$j) {
+        if ($j > 0) {
+            $success_result .= ", ";
+        }
+
+        $success_result .= "\"" . addslashes($problem_matched_keywords[$j]) . "\"";
     }
 
     $success_result .= "], \"content\": \"$content_b64\"}";
