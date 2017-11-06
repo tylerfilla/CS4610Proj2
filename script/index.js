@@ -1167,6 +1167,14 @@ function doUndoTrash() {
  * Perform a search.
  */
 function doSearch() {
+    // Require non-empty query
+    if (keywordSearchInput.getKeywords().length === 0) {
+        $("#no-query-alert").attr("style", "display: inline-block;");
+        return;
+    } else {
+        $("#no-query-alert").attr("style", "display: none;");
+    }
+
     // Set result mode to search
     resultMode = 2;
 
