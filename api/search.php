@@ -137,7 +137,7 @@ for ($i = $page_first_problem - 1; $i < $page_last_problem; ++$i) {
 
     // Retrieve problem keywords
     if ($sql_stmt = $sql->prepare("SELECT `word` FROM `keyword` WHERE `pid` = ?")) {
-        $sql_stmt->bind_param("i", $pid);
+        $sql_stmt->bind_param("i", $problem_pid);
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to get keywords: $sql->error\"}");
         }
