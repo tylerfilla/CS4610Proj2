@@ -99,21 +99,27 @@
                 <input id="search-input" class="keyword-input-box" type="text" placeholder="Keyword search"/>
             </div>
             <div class="input-group-btn">
-                <button class="btn btn-default"><span class="glyphicon glyphicon-search"></span></button>
+                <button class="btn btn-default" onclick="doSearch()">
+                    <span class="glyphicon glyphicon-search"></span>
+                </button>
             </div>
         </div>
     </div>
     <div>
-        <button class="btn btn-default" onclick="startComposeNew()">
+        <button id="compose-new-button" class="btn btn-default" onclick="startComposeNew()">
             <span class="glyphicon glyphicon-pencil"></span>
             Compose New
         </button>
+        <button id="cancel-search-button" class="btn btn-default" onclick="doCancelSearch()">
+            <span class="glyphicon glyphicon-remove"></span>
+            Cancel Search
+        </button>
         <div id="trash-buttons" class="btn-group" role="group">
-            <button class="btn btn-default" onclick="startEmptyTrash();">
+            <button class="btn btn-default" onclick="startEmptyTrash()">
                 <span class="glyphicon glyphicon-trash"></span>
                 Empty Trash
             </button>
-            <button class="btn btn-default" onclick="doUndoTrash();">
+            <button class="btn btn-default" onclick="doUndoTrash()">
                 <span class="glyphicon glyphicon-backward"></span>
                 Undo Trash
             </button>

@@ -49,8 +49,9 @@ $matched_pids = array();
 $matched_keywords = array();
 
 // Query for keywords and collect matches
+// Ignore problems that are in the trash
 foreach ($keywords as $keyword) {
-    if ($sql_stmt = $sql->prepare("SELECT `pid` FROM `keyword` WHERE `word` = ?")) {
+    if ($sql_stmt = $sql->prepare("SELECT K.`pid` FROM `keyword` AS K INNER JOIN `problem` AS P ON K.`pid` = P.`pid` WHERE K.`word` = ? AND P.`trashed` IS NULL")) {
         $sql_stmt->bind_param("s", $keyword);
         if (!$sql_stmt->execute()) {
             die("{\"success\": false, \"error\": \"Unable to query keyword: $sql->error\"}");

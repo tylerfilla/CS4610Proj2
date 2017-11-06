@@ -324,7 +324,7 @@ function onEditModalConfirm() {
         $("#modal-edit").modal("hide");
 
         // Refresh result table
-        refreshResultTable();
+        refreshResults();
     }
 
     if (editModalOutstandingProblem === -2) {
@@ -417,7 +417,7 @@ function onTrashModalConfirm() {
         $("#modal-trash").modal("hide");
 
         // Refresh result table
-        refreshResultTable();
+        refreshResults();
     });
 }
 
@@ -436,7 +436,7 @@ function onEmptyTrashModalConfirm() {
         $("#modal-empty-trash").modal("hide");
 
         // Refresh result table
-        refreshResultTable();
+        refreshResults();
     });
 }
 
@@ -486,7 +486,7 @@ function showEditModal(createMode, problem, content, keywords) {
                 }
 
                 // Refresh result table
-                refreshResultTable();
+                refreshResults();
             });
         });
         editModalKeywordInput.addOnKeywordRemoveListener(function(keyword) {
@@ -497,7 +497,7 @@ function showEditModal(createMode, problem, content, keywords) {
                 }
 
                 // Refresh result table
-                refreshResultTable();
+                refreshResults();
             });
         });
     }
@@ -553,10 +553,10 @@ function showEmptyTrashModal(count) {
 //
 
 /**
- * The result table mode. 1 for list or 2 for search.
+ * The result mode. 1 for list or 2 for search.
  * @type {number}
  */
-var resultTableMode = 2;
+var resultMode = 1;
 
 /**
  * The current result page.
@@ -677,6 +677,8 @@ function renderResultTable(problemList) {
     // Render Actual Result Table
     //
 
+    // TODO: Sort problem list by relevance
+
     // Delete all existing table rows
     while (resultTableTbody.firstChild) {
         resultTableTbody.removeChild(resultTableTbody.firstChild);
@@ -717,6 +719,13 @@ function renderResultTable(problemList) {
         problemContentArea.innerHTML = problemContent;
         rowProblem.appendChild(problemContentArea);
 
+        // In search mode, list matched keywords
+        if (resultMode === 2) {
+            var problemMatchedKeywords = document.createElement("div");
+            problemMatchedKeywords.innerHTML = "<b>Matched: </b>" + problemKeywords.join(", ");
+            problemContentArea.appendChild(problemMatchedKeywords);
+        }
+
         // Row action column
         var rowAction = document.createElement("td");
         rowAction.style.whiteSpace = "nowrap";
@@ -724,7 +733,7 @@ function renderResultTable(problemList) {
 
         // Don't allow problems to be reordered in search mode
         // This wouldn't make much sense, as they're already sorted by search relevance
-        if (resultTableMode !== 2) {
+        if (resultMode !== 2) {
             // Move up action button
             var actionUp = document.createElement("button");
             actionUp.classList.add("btn", "btn-default");
@@ -740,7 +749,7 @@ function renderResultTable(problemList) {
                     }
 
                     // Refresh result table
-                    refreshResultTable();
+                    refreshResults();
                 });
             }, false);
 
@@ -764,7 +773,7 @@ function renderResultTable(problemList) {
                     }
 
                     // Refresh result table
-                    refreshResultTable();
+                    refreshResults();
                 });
             }, false);
 
@@ -811,9 +820,9 @@ function renderResultTable(problemList) {
 }
 
 /**
- * Refresh the result table.
+ * Refresh the results.
  */
-function refreshResultTable() {
+function refreshResults() {
     // Get trash count
     apiTrash("count", 0, function(err, res) {
         if (err) {
@@ -842,7 +851,13 @@ function refreshResultTable() {
             MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
         }
 
-        if (resultTableMode === 1) {
+        if (resultMode === 1) {
+            // Show compose new button
+            $("#compose-new-button").show();
+
+            // Hide cancel search button
+            $("#cancel-search-button").hide();
+
             // Result table is in list mode
             // Send list request to server
             apiList(resultPage, resultPageSize, function(err, res) {
@@ -853,10 +868,16 @@ function refreshResultTable() {
 
                 complete(res["last_page"], res["problems"]);
             });
-        } else if (resultTableMode === 2) {
+        } else if (resultMode === 2) {
+            // Hide compose new button
+            $("#compose-new-button").hide();
+
+            // Show cancel search button
+            $("#cancel-search-button").show();
+
             // Result table is in search mode
             // Send search request to server
-            apiSearch(["triangle", "line", "circle"], resultPage, resultPageSize, function(err, res) { // FIXME
+            apiSearch(keywordSearchInput.getKeywords(), resultPage, resultPageSize, function(err, res) {
                 if (err) {
                     console.error("Could not refresh result table (search): " + err);
                     return;
@@ -884,7 +905,7 @@ function goPage(page) {
     resultPage = page;
 
     // Refresh the result table, thus causing reuptake of the result page value
-    refreshResultTable();
+    refreshResults();
 }
 
 /**
@@ -1112,14 +1133,36 @@ function doUndoTrash() {
         }
 
         // Refresh result table
-        refreshResultTable();
+        refreshResults();
     });
+}
+
+/**
+ * Perform a search.
+ */
+function doSearch() {
+    // Set result mode to search
+    resultMode = 2;
+
+    // Refresh result table
+    refreshResults();
+}
+
+/**
+ * Cancel a search.
+ */
+function doCancelSearch() {
+    // Set result mode to list
+    resultMode = 1;
+
+    // Refresh result table
+    refreshResults();
 }
 
 /**
  * The main keyword search input instance.
  */
-var keywordSearchInput;
+var keywordSearchInput = null;
 
 // Listen for window load
 window.addEventListener("load", function() {
@@ -1131,6 +1174,13 @@ window.addEventListener("load", function() {
     // Configure main keyword search input
     keywordSearchInput = new KeywordInput(searchInputArea, searchChipArea, searchInputBox, "Keyword search");
 
+    // Cancel search if all keywords are removed in search mode
+    keywordSearchInput.addOnKeywordRemoveListener(function(keyword) {
+        if (keywordSearchInput.getKeywords().length === 0 && resultMode === 2) {
+            doCancelSearch();
+        }
+    });
+
     // Preliminary result table refresh
-    refreshResultTable();
+    refreshResults();
 }, false);
