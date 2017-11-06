@@ -699,7 +699,7 @@ function renderResultTable(problemList) {
         // Row order column
         var rowOrder = document.createElement("td");
         rowOrder.style.whiteSpace = "nowrap";
-        rowOrder.appendChild(document.createTextNode(i + 1));
+        rowOrder.appendChild(document.createTextNode((resultPage - 1) * resultPageSize + i + 1));
         row.appendChild(rowOrder);
 
         // Row ID column
